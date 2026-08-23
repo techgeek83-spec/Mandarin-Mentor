@@ -3,6 +3,7 @@ import time
 import streamlit as st
 import asyncio
 import edge_tts
+import re
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
@@ -117,6 +118,8 @@ When reviewing a user's sentence:
 
 ### **Mode C: Real-Life Roleplay & Situational Practice**
 * If the user wants to practice a scenario (convenience store, night market, asking for directions), keep turns short (1–2 sentences in Hanzi + Pinyin + English) and give brief feedback on their replies.
+
+Audio Tagging: When providing Chinese examples or vocabulary, wrap ONLY the Traditional Chinese characters in <tts> tags so the audio engine can read them. Do not wrap Pinyin or English in these tags. Example: 我懂了
 """
 
 WELCOME_MESSAGE = """Hi there! Welcome! I'm excited to help you learn and practice Taiwanese Mandarin.
@@ -205,26 +208,38 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
         st.chat_message("user", avatar="🧑‍💻").write(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Generate response with error catching
+       # Generate response with error catching
         try:
             with st.spinner("Thinking..."):
                 response = st.session_state.chat.send_message(prompt)
-                # audio_bytes = generate_audio(response.text) # Temporarily disabled
-                audio_bytes = None
-
-            # Log token utilization telemetry
+                
+                # 1. Extract ONLY the Chinese text inside the <tts> tags for the audio player
+                tts_text = " ".join(re.findall(r'<tts>(.*?)</tts>', response.text, flags=re.DOTALL))
+                audio_bytes = generate_audio(tts_text) if tts_text else None
+                
+                # 2. Remove the tags so they don't show up on the user's screen
+                clean_text = response.text.replace('<tts>', '').replace('</tts>', '')
+                
+                # 3. Log token utilization telemetry
                 if response.usage_metadata:
                     prompt_tokens = response.usage_metadata.prompt_token_count
                     out_tokens = response.usage_metadata.candidates_token_count
                     total_tokens = response.usage_metadata.total_token_count
                     logging.info(f"Tokens -> Prompt: {prompt_tokens} | Output: {out_tokens} | Total: {total_tokens}")
-                           
-            st.chat_message("assistant", avatar="🧑🏻‍🏫").write(response.text)
+                
+            # Display the clean text to the user
+            st.chat_message("assistant", avatar="🧑🏻‍🏫").write(clean_text)
+            
+            # Display the audio player if targeted Mandarin was found
             if audio_bytes:
                 st.audio(audio_bytes, format="audio/mp3")
                 
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
-            logging.info(f"Generated response for prompt #{st.session_state.user_message_count}")
+            # Save the clean text and audio to history
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": clean_text,
+                "audio": audio_bytes
+            })
             
         except APIError as e:
             logging.error(f"Gemini API Error: {e.message}")
