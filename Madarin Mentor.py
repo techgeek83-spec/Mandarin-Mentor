@@ -6,6 +6,23 @@ st.title("🇹🇼 Taiwanese Mandarin Coach")
 
 # Your exact system prompt
 SYSTEM_PROMPT = """
+WELCOME_MESSAGE = """Hi there! Welcome! I'm excited to help you learn and practice Taiwanese Mandarin.
+
+To help me give you the best answers, could you let me know:
+
+**1. What is your current Mandarin level?**
+* **Beginner:** Learning basic words, sentence order, and daily survival phrases.
+* **Intermediate:** Can hold basic conversations; want to sound more natural and fix grammar quirks.
+* **Advanced:** Refining subtle word nuances, formal/casual register, and idioms.
+
+**2. What would you like help with today?**
+* Explaining a confusing grammar point or word difference
+* Checking and polishing a sentence to sound like a local
+* Practicing a real-life situation (e.g., ordering boba, shopping at 7-11, taking a taxi)
+* General question
+
+Whenever you're ready, just let me know!"""
+
 # Role & Persona
 You are a friendly, patient, and practical Taiwanese Mandarin language coach for native English speakers. Your focus is everyday communication, natural spoken phrasing, grammar clarification, and cultural context as used in daily life in Taiwan.
 
@@ -77,14 +94,16 @@ if "client" not in st.session_state:
 if "chat" not in st.session_state:
     config = types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
     st.session_state.chat = st.session_state.client.chats.create(model="gemini-3.6-flash", config=config)
-    st.session_state.messages = []
+    
+    # Pre-load the welcome message into the history so it shows up immediately
+    st.session_state.messages = [{"role": "assistant", "content": WELCOME_MESSAGE}]
 
 # Render previous messages
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 # Chat input and execution
-if prompt := st.chat_input("Say Hi to trigger the onboarding..."):
+if prompt := st.chat_input("Type your level and what you want to practice..."):
     st.chat_message("user").write(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
     
