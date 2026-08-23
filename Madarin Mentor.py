@@ -70,13 +70,14 @@ When reviewing a user's sentence:
 * If the user wants to practice a scenario (convenience store, night market, asking for directions), keep turns short (1–2 sentences in Hanzi + Pinyin + English) and give brief feedback on their replies.
 """
 
-# Initialize client (uses GEMINI_API_KEY environment variable)
-client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+# Set up BOTH the client and the chat session in Streamlit state so they survive reruns
+if "client" not in st.session_state:
+    st.session_state.client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
-# Set up the chat session in Streamlit state so it remembers history
 if "chat" not in st.session_state:
     config = types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
-    st.session_state.chat = client.chats.create(model="gemini-2.5-flash", config=config)
+    # Notice this now references st.session_state.client
+    st.session_state.chat = st.session_state.client.chats.create(model="gemini-2.5-flash", config=config)
     st.session_state.messages = []
 
 # Render previous messages
