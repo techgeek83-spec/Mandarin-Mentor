@@ -4,13 +4,24 @@ from google.genai import types
 
 # This MUST be the first Streamlit command in the script
 st.set_page_config(page_title="Mandarin Mentor", page_icon="🧑🏻‍🏫")
-# Inject custom CSS for the Nunito font
+
+# Inject custom CSS for the Nunito font and hiding default Streamlit menus
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
 
 html, body, [class*="css"] {
     font-family: 'Nunito', sans-serif !important;
+}
+
+/* Hide the top header (GitHub, Share, Menu) */
+header {
+    display: none !important;
+}
+
+/* Hide the default Streamlit footer */
+footer {
+    display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
