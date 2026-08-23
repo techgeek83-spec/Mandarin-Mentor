@@ -211,7 +211,14 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
                 response = st.session_state.chat.send_message(prompt)
                 # audio_bytes = generate_audio(response.text) # Temporarily disabled
                 audio_bytes = None
-                
+
+            # Log token utilization telemetry
+                if response.usage_metadata:
+                    prompt_tokens = response.usage_metadata.prompt_token_count
+                    out_tokens = response.usage_metadata.candidates_token_count
+                    total_tokens = response.usage_metadata.total_token_count
+                    logging.info(f"Tokens -> Prompt: {prompt_tokens} | Output: {out_tokens} | Total: {total_tokens}")
+                           
             st.chat_message("assistant", avatar="🧑🏻‍🏫").write(response.text)
             if audio_bytes:
                 st.audio(audio_bytes, format="audio/mp3")
