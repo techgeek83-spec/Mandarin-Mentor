@@ -77,7 +77,11 @@ if "client" not in st.session_state:
 if "chat" not in st.session_state:
     config = types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
     # Notice this now references st.session_state.client
-    st.session_state.chat = st.session_state.client.chats.create(model="gemini-2.5-flash", config=config)
+   # Change this line:
+# st.session_state.chat = st.session_state.client.chats.create(model="gemini-2.5-flash", config=config)
+
+# To this:
+st.session_state.chat = st.session_state.client.chats.create(model="gemini-3.6-flash", config=config)
     st.session_state.messages = []
 
 # Render previous messages
