@@ -137,6 +137,25 @@ if "chat" not in st.session_state:
     st.session_state.last_message_time = 0
     st.session_state.user_message_count = 0
 
+# ----------------------------------------------------
+# Sidebar Tools: Download Notes
+# ----------------------------------------------------
+with st.sidebar:
+    st.markdown("### Practice Tools")
+    
+    # Compile conversation into plain text
+    chat_text = "\n\n".join(
+        [f"{msg['role'].upper()}: {msg['content']}" for msg in st.session_state.messages]
+    )
+    
+    st.download_button(
+        label="📥 Download Notes",
+        data=chat_text,
+        file_name="mandarin_mentor_notes.txt",
+        mime="text/plain",
+        use_container_width=True
+    )
+    
 # 8. Render Chat History
 for msg in st.session_state.messages:
     avatar_icon = "🧑🏻‍🏫" if msg["role"] == "assistant" else "🧑‍💻"
