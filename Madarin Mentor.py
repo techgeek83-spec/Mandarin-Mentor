@@ -1,11 +1,17 @@
+import logging
+import time
 import streamlit as st
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
 
-# This MUST be the first Streamlit command in the script
+# 1. Server-side logging configuration
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+# 2. Streamlit Page Configuration (Must be the first Streamlit command)
 st.set_page_config(page_title="Mandarin Mentor", page_icon="🧑🏻‍🏫")
 
-# Inject custom CSS for the Nunito font and hiding default Streamlit menus
+# 3. Custom CSS for typography and UI cleanup
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
@@ -14,27 +20,22 @@ html, body, [class*="css"] {
     font-family: 'Nunito', sans-serif !important;
 }
 
-/* Hide the top header (GitHub, Share, Menu) */
+/* Hide top header clutter */
 header {
     display: none !important;
 }
 
-/* Hide the default Streamlit footer */
+/* Hide default footer */
 footer {
-    display: none !important;
-}
-
-/* Hide the floating 'Manage app' developer toolbar */
-.stAppDeployButton {
     display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# Update your main page title
+# 4. Main App Title
 st.title("Mandarin Mentor")
 
-# Your exact system prompt
+# 5. Prompts and Instructions
 SYSTEM_PROMPT = """
 # Role & Persona
 You are a friendly, patient, and practical Taiwanese Mandarin language coach for native English speakers. Your focus is everyday communication, natural spoken phrasing, grammar clarification, and cultural context as used in daily life in Taiwan.
@@ -75,14 +76,14 @@ You are a friendly, patient, and practical Taiwanese Mandarin language coach for
   * 和 (*hàn*), 星期 (*xīngqí*)
 * **Colloquial Taiwanese Nuances:** 
   * Explain and use common Taiwanese sentence-final particles (啦, 喔, 耶, 欸, 吼) where they add natural flavor.
-  * Explain spoken Taiwanese patterns like `有 + Verb` (e.g., "我有看到" vs. "我看到了") when clarifying how locals actually speak compared to textbook rules.
+  * Explain spoken Taiwanese patterns like 有 + Verb (e.g., "我有看到" vs. "我看到了") when clarifying how locals actually speak compared to textbook rules.
 
 ---
 
 ## 3. Assistance Modes & Output Formats
 
 ### **Mode A: Grammar & Word Clarification**
-* **Target Concept:** [Word / Pattern] (`Pinyin`)
+* **Target Concept:** [Word / Pattern] (Pinyin)
 * **Plain English Explanation:** What it means and exactly when to use it (1–2 sentences).
 * **Natural Examples (Taiwan Daily Life):**
   * **Hanzi:** [Traditional Chinese]
@@ -99,7 +100,7 @@ When reviewing a user's sentence:
 ### **Mode C: Real-Life Roleplay & Situational Practice**
 * If the user wants to practice a scenario (convenience store, night market, asking for directions), keep turns short (1–2 sentences in Hanzi + Pinyin + English) and give brief feedback on their replies.
 """
-# The Welcome Message block
+
 WELCOME_MESSAGE = """Hi there! Welcome! I'm excited to help you learn and practice Taiwanese Mandarin.
 
 To help me give you the best answers, could you let me know:
@@ -117,29 +118,66 @@ To help me give you the best answers, could you let me know:
 
 Whenever you're ready, just let me know!"""
 
-# Set up BOTH the client and the chat session in Streamlit state so they survive reruns
+# 6. Usage Limits
+COOLDOWN_SECONDS = 4
+MAX_SESSION_MESSAGES = 30
+
+# 7. Session State Initialization
 if "client" not in st.session_state:
     st.session_state.client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
 if "chat" not in st.session_state:
-    config = types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
+    config = types.GenerateContentConfig(
+        system_instruction=SYSTEM_PROMPT,
+        max_output_tokens=800,
+        temperature=0.7
+    )
     st.session_state.chat = st.session_state.client.chats.create(model="gemini-3.6-flash", config=config)
-    
-    # Pre-load the welcome message into the history so it shows up immediately
     st.session_state.messages = [{"role": "assistant", "content": WELCOME_MESSAGE}]
+    st.session_state.last_message_time = 0
+    st.session_state.user_message_count = 0
 
-# Render previous messages
+# 8. Render Chat History
 for msg in st.session_state.messages:
-    # Pick the avatar based on who is talking
     avatar_icon = "🧑🏻‍🏫" if msg["role"] == "assistant" else "🧑‍💻"
     st.chat_message(msg["role"], avatar=avatar_icon).write(msg["content"])
 
-# Chat input and execution
+# 9. Chat Execution & Handling Loop
 if prompt := st.chat_input("Type your level and what you want to practice..."):
-    st.chat_message("user", avatar="🧑‍💻").write(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    current_time = time.time()
+    
+    # Check session limit cap
+    if st.session_state.user_message_count >= MAX_SESSION_MESSAGES:
+        logging.warning("User reached maximum message limit for this session.")
+        st.error("You have reached the practice limit for this session. Please refresh the page to start a new chat.")
+        
+    # Check rapid debounce
+    elif current_time - st.session_state.last_message_time < COOLDOWN_SECONDS:
+        remaining = int(COOLDOWN_SECONDS - (current_time - st.session_state.last_message_time))
+        logging.info(f"Rapid debounce triggered: {remaining}s remaining.")
+        st.warning(f"Please wait {remaining} second(s) before sending another message.")
+        
+    else:
+        # Update session trackers
+        st.session_state.last_message_time = current_time
+        st.session_state.user_message_count += 1
+        
+        # Display user message
+        st.chat_message("user", avatar="🧑‍💻").write(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
-    response = st.session_state.chat.send_message(prompt)
-
-    st.chat_message("assistant", avatar="🧑🏻‍🏫").write(response.text)
-    st.session_state.messages.append({"role": "assistant", "content": response.text})
+        # Generate response with error catching
+        try:
+            with st.spinner("Thinking..."):
+                response = st.session_state.chat.send_message(prompt)
+                
+            st.chat_message("assistant", avatar="🧑🏻‍🏫").write(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            logging.info(f"Generated response for prompt #{st.session_state.user_message_count}")
+            
+        except APIError as e:
+            logging.error(f"Gemini API Error: {e.message}")
+            st.error("Google AI service is momentarily unavailable. Please wait a moment and try again.")
+        except Exception as e:
+            logging.error(f"Unexpected application error: {e}", exc_info=True)
+            st.error("An error occurred while generating your response. Please try again.")
