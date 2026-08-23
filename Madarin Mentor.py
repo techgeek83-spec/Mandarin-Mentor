@@ -4,6 +4,7 @@ import streamlit as st
 import asyncio
 import edge_tts
 import re
+import base64
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
@@ -36,8 +37,8 @@ footer {
 """, unsafe_allow_html=True)
 
 # Helper to generate Taiwanese Mandarin speech asynchronously
-async def text_to_speech_async(text: str, voice: str = "zh-TW-YunJheNeural") -> bytes:
-    communicate = edge_tts.Communicate(text, voice)
+async def text_to_speech_async(text: str, voice: str = "zh-TW-YunJheNeural, rate: str = "-25%"") -> bytes:
+    communicate = edge_tts.Communicate(text, voice, rate=rate)
     audio_data = b""
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
@@ -179,10 +180,8 @@ with st.sidebar:
 # 8. Render Chat History
 for msg in st.session_state.messages:
     avatar_icon = "🧑🏻‍🏫" if msg["role"] == "assistant" else "🧑‍💻"
-    st.chat_message(msg["role"], avatar=avatar_icon).write(msg["content"])
-    # If audio exists for this message, render the player
-    if "audio" in msg and msg["audio"] is not None:
-        st.audio(msg["audio"], format="audio/mp3")
+    # Using .markdown(..., unsafe_allow_html=True) allows our inline audio to render
+    st.chat_message(msg["role"], avatar=avatar_icon).markdown(msg["content"], unsafe_allow_html=True)
         
 # 9. Chat Execution & Handling Loop
 if prompt := st.chat_input("Type your level and what you want to practice..."):
@@ -208,17 +207,27 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
         st.chat_message("user", avatar="🧑‍💻").write(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-       # Generate response with error catching
+     # Generate response with error catching
         try:
             with st.spinner("Thinking..."):
                 response = st.session_state.chat.send_message(prompt)
+                clean_text = response.text
                 
-                # 1. Extract ONLY the Chinese text inside the <tts> tags for the audio player
-                tts_text = " ".join(re.findall(r'<tts>(.*?)</tts>', response.text, flags=re.DOTALL))
-                audio_bytes = generate_audio(tts_text) if tts_text else None
+                # 1. Extract all tagged Chinese phrases
+                matches = re.findall(r'<tts>(.*?)</tts>', clean_text, flags=re.DOTALL)
                 
-                # 2. Remove the tags so they don't show up on the user's screen
-                clean_text = response.text.replace('<tts>', '').replace('</tts>', '')
+                # 2. For each phrase, generate audio and build a mini inline player
+                for phrase in matches:
+                    audio_bytes = generate_audio(phrase)
+                    if audio_bytes:
+                        # Convert to base64 so it can live inside the text
+                        b64 = base64.b64encode(audio_bytes).decode()
+                        # Create a small, inline HTML audio player
+                        audio_html = f'<audio controls style="height: 35px; width: 200px; vertical-align: middle; margin-left: 8px;" src="data:audio/mp3;base64,{b64}"></audio>'
+                        # Swap the <tts> tags for the phrase and the new play button
+                        clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}** {audio_html}')
+                    else:
+                        clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}**')
                 
                 # 3. Log token utilization telemetry
                 if response.usage_metadata:
@@ -227,18 +236,13 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
                     total_tokens = response.usage_metadata.total_token_count
                     logging.info(f"Tokens -> Prompt: {prompt_tokens} | Output: {out_tokens} | Total: {total_tokens}")
                 
-            # Display the clean text to the user
-            st.chat_message("assistant", avatar="🧑🏻‍🏫").write(clean_text)
-            
-            # Display the audio player if targeted Mandarin was found
-            if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3")
+            # Display the text (which now has built-in audio players) to the user
+            st.chat_message("assistant", avatar="🧑🏻‍🏫").markdown(clean_text, unsafe_allow_html=True)
                 
-            # Save the clean text and audio to history
+            # Save the text to history (no need to save a separate audio object anymore)
             st.session_state.messages.append({
                 "role": "assistant", 
-                "content": clean_text,
-                "audio": audio_bytes
+                "content": clean_text
             })
             
         except APIError as e:
