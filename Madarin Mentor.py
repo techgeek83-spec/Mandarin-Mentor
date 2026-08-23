@@ -23,6 +23,11 @@ header {
 footer {
     display: none !important;
 }
+
+/* Hide the floating 'Manage app' developer toolbar */
+.stAppDeployButton {
+    display: none !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
