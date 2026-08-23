@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # 2. Streamlit Page Configuration (Must be the first Streamlit command)
 st.set_page_config(page_title="Mandarin Mentor", page_icon="🧑🏻‍🏫")
 
-# 3. Custom CSS for typography and UI cleanup
+# 3. Custom CSS for typography, UI cleanup, and dark-mode audio pills
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
@@ -32,6 +32,17 @@ header {
 /* Hide default footer */
 footer {
     display: none !important;
+}
+
+/* Clean styling for inline audio pills */
+audio {
+    filter: invert(15%) hue-rotate(180deg);
+    opacity: 0.85;
+    border-radius: 20px;
+    transition: opacity 0.2s ease;
+}
+audio:hover {
+    opacity: 1;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -180,7 +191,6 @@ with st.sidebar:
 # 8. Render Chat History
 for msg in st.session_state.messages:
     avatar_icon = "🧑🏻‍🏫" if msg["role"] == "assistant" else "🧑‍💻"
-    # Using .markdown(..., unsafe_allow_html=True) allows our inline audio to render
     st.chat_message(msg["role"], avatar=avatar_icon).markdown(msg["content"], unsafe_allow_html=True)
         
 # 9. Chat Execution & Handling Loop
@@ -207,29 +217,25 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
         st.chat_message("user", avatar="🧑‍💻").write(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-     # Generate response with error catching
+        # Generate response with error catching
         try:
             with st.spinner("Thinking..."):
                 response = st.session_state.chat.send_message(prompt)
                 clean_text = response.text
                 
-               # 1. Extract all tagged Chinese phrases
+                # 1. Extract all tagged Chinese phrases
                 matches = re.findall(r'<tts>(.*?)</tts>', clean_text, flags=re.DOTALL)
                 
-                # 2. For each phrase, generate audio and apply the CSS Shrink Trick
+                # 2. For each phrase, generate audio and build a compact 1-click player
                 for phrase in matches:
                     audio_bytes = generate_audio(phrase)
                     if audio_bytes:
                         b64 = base64.b64encode(audio_bytes).decode()
-                        
-                        # Native player shrunk to 40px width to hide the timeline and menus
                         audio_html = f'''
                         <audio controls controlsList="nodownload noplaybackrate" 
-                               style="height: 35px; width: 40px; vertical-align: middle; margin-left: 8px;" 
+                               style="height: 30px; width: 130px; vertical-align: middle; margin-left: 6px; border-radius: 20px;" 
                                src="data:audio/mp3;base64,{b64}"></audio>
                         '''
-                        
-                        # Replace the tag with bold text and the micro-player
                         clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}** {audio_html.strip()}')
                     else:
                         clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}**')
@@ -241,10 +247,10 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
                     total_tokens = response.usage_metadata.total_token_count
                     logging.info(f"Tokens -> Prompt: {prompt_tokens} | Output: {out_tokens} | Total: {total_tokens}")
                 
-            # Display the text (which now has built-in audio players) to the user
+            # Display the rendered text with embedded audio pills
             st.chat_message("assistant", avatar="🧑🏻‍🏫").markdown(clean_text, unsafe_allow_html=True)
                 
-            # Save the text to history (no need to save a separate audio object anymore)
+            # Save the formatted output to chat history
             st.session_state.messages.append({
                 "role": "assistant", 
                 "content": clean_text
