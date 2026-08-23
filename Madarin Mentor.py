@@ -215,17 +215,27 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
                 
                 # 1. Extract all tagged Chinese phrases
                 matches = re.findall(r'<tts>(.*?)</tts>', clean_text, flags=re.DOTALL)
+                # 1. Extract all tagged Chinese phrases
+                matches = re.findall(r'<tts>(.*?)</tts>', clean_text, flags=re.DOTALL)
                 
-                # 2. For each phrase, generate audio and build a mini inline player
-                for phrase in matches:
+                # 2. For each phrase, generate audio and build a sleek inline speaker icon
+                for idx, phrase in enumerate(matches):
                     audio_bytes = generate_audio(phrase)
                     if audio_bytes:
-                        # Convert to base64 so it can live inside the text
                         b64 = base64.b64encode(audio_bytes).decode()
-                        # Create a small, inline HTML audio player
-                        audio_html = f'<audio controls style="height: 35px; width: 200px; vertical-align: middle; margin-left: 8px;" src="data:audio/mp3;base64,{b64}"></audio>'
-                        # Swap the <tts> tags for the phrase and the new play button
-                        clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}** {audio_html}')
+                        audio_id = f"audio_{st.session_state.user_message_count}_{idx}"
+                        
+                        # Hidden audio element paired with a clickable speaker icon
+                        speaker_button_html = f'''
+                        <span style="display: inline-flex; align-items: center; margin: 0 4px;">
+                            <audio id="{audio_id}" src="data:audio/mp3;base64,{b64}"></audio>
+                            <button onclick="document.getElementById('{audio_id}').play()" 
+                                    style="background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0 2px; vertical-align: middle;" 
+                                    title="Click to listen">🔊</button>
+                        </span>'''
+                        
+                        # Replace the tag with bold text and the speaker icon
+                        clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}** {speaker_button_html}')
                     else:
                         clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}**')
                 
