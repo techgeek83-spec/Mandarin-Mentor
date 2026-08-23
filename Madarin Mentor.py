@@ -37,7 +37,7 @@ footer {
 """, unsafe_allow_html=True)
 
 # Helper to generate Taiwanese Mandarin speech asynchronously
-async def text_to_speech_async(text: str, voice: str = "zh-TW-YunJheNeural, rate: str = "-25%"") -> bytes:
+async def text_to_speech_async(text: str, voice: str = "zh-TW-YunJheNeural", rate: str = "-25%") -> bytes:
     communicate = edge_tts.Communicate(text, voice, rate=rate)
     audio_data = b""
     async for chunk in communicate.stream():
@@ -120,7 +120,7 @@ When reviewing a user's sentence:
 ### **Mode C: Real-Life Roleplay & Situational Practice**
 * If the user wants to practice a scenario (convenience store, night market, asking for directions), keep turns short (1–2 sentences in Hanzi + Pinyin + English) and give brief feedback on their replies.
 
-Audio Tagging: When providing Chinese examples or vocabulary, wrap ONLY the Traditional Chinese characters in <tts> tags so the audio engine can read them. Do not wrap Pinyin or English in these tags. Example: 我懂了
+* **Audio Tagging:** When providing Chinese examples or vocabulary, wrap ONLY the Traditional Chinese characters in <tts> tags so the audio engine can read them. Do not wrap Pinyin or English in these tags. Example: <tts>我懂了</tts>
 """
 
 WELCOME_MESSAGE = """Hi there! Welcome! I'm excited to help you learn and practice Taiwanese Mandarin.
