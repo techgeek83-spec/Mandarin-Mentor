@@ -2,7 +2,11 @@ import streamlit as st
 from google import genai
 from google.genai import types
 
-st.title("🇹🇼 Taiwanese Mandarin Coach")
+# This MUST be the first Streamlit command in the script
+st.set_page_config(page_title="Mandarin Mentor", page_icon="🧑🏻‍🏫")
+
+# Update your main page title
+st.title("Mandarin Mentor")
 
 # Your exact system prompt
 SYSTEM_PROMPT = """
