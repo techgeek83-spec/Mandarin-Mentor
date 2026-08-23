@@ -1,6 +1,8 @@
 import logging
 import time
 import streamlit as st
+import asyncio
+import edge_tts
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
@@ -31,6 +33,22 @@ footer {
 }
 </style>
 """, unsafe_allow_html=True)
+
+# Helper to generate Taiwanese Mandarin speech asynchronously
+async def text_to_speech_async(text: str, voice: str = "zh-TW-YunJheNeural") -> bytes:
+    communicate = edge_tts.Communicate(text, voice)
+    audio_data = b""
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            audio_data += chunk["data"]
+    return audio_data
+
+def generate_audio(text: str) -> bytes:
+    try:
+        return asyncio.run(text_to_speech_async(text))
+    except Exception as e:
+        logging.error(f"TTS generation error: {e}")
+        return None
 
 # 4. Main App Title
 st.title("Mandarin Mentor")
@@ -160,7 +178,10 @@ with st.sidebar:
 for msg in st.session_state.messages:
     avatar_icon = "🧑🏻‍🏫" if msg["role"] == "assistant" else "🧑‍💻"
     st.chat_message(msg["role"], avatar=avatar_icon).write(msg["content"])
-
+    # If audio exists for this message, render the player
+    if "audio" in msg and msg["audio"] is not None:
+        st.audio(msg["audio"], format="audio/mp3")
+        
 # 9. Chat Execution & Handling Loop
 if prompt := st.chat_input("Type your level and what you want to practice..."):
     current_time = time.time()
@@ -189,8 +210,13 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
         try:
             with st.spinner("Thinking..."):
                 response = st.session_state.chat.send_message(prompt)
+                # Generate Taiwanese Mandarin audio for the response
+                audio_bytes = generate_audio(response.text)
                 
             st.chat_message("assistant", avatar="🧑🏻‍🏫").write(response.text)
+            if audio_bytes:
+                st.audio(audio_bytes, format="audio/mp3")
+                
             st.session_state.messages.append({"role": "assistant", "content": response.text})
             logging.info(f"Generated response for prompt #{st.session_state.user_message_count}")
             
