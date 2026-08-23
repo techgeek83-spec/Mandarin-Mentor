@@ -4,6 +4,16 @@ from google.genai import types
 
 # This MUST be the first Streamlit command in the script
 st.set_page_config(page_title="Mandarin Mentor", page_icon="🧑🏻‍🏫")
+# Inject custom CSS for the Nunito font
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Nunito', sans-serif !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Update your main page title
 st.title("Mandarin Mentor")
@@ -104,14 +114,16 @@ if "chat" not in st.session_state:
 
 # Render previous messages
 for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+    # Pick the avatar based on who is talking
+    avatar_icon = "🧑🏻‍🏫" if msg["role"] == "assistant" else "🧑‍💻"
+    st.chat_message(msg["role"], avatar=avatar_icon).write(msg["content"])
 
 # Chat input and execution
 if prompt := st.chat_input("Type your level and what you want to practice..."):
-    st.chat_message("user").write(prompt)
+    st.chat_message("user", avatar="🧑‍💻").write(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
+
     response = st.session_state.chat.send_message(prompt)
-    
-    st.chat_message("assistant").write(response.text)
+
+    st.chat_message("assistant", avatar="🧑🏻‍🏫").write(response.text)
     st.session_state.messages.append({"role": "assistant", "content": response.text})
