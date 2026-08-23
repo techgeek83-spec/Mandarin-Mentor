@@ -147,7 +147,6 @@ if "client" not in st.session_state:
 if "chat" not in st.session_state:
     config = types.GenerateContentConfig(
         system_instruction=SYSTEM_PROMPT,
-        max_output_tokens=800,
         temperature=0.7
     )
     st.session_state.chat = st.session_state.client.chats.create(model="gemini-3.6-flash", config=config)
@@ -210,8 +209,8 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
         try:
             with st.spinner("Thinking..."):
                 response = st.session_state.chat.send_message(prompt)
-                # Generate Taiwanese Mandarin audio for the response
-                audio_bytes = generate_audio(response.text)
+                # audio_bytes = generate_audio(response.text) # Temporarily disabled
+                audio_bytes = None
                 
             st.chat_message("assistant", avatar="🧑🏻‍🏫").write(response.text)
             if audio_bytes:
