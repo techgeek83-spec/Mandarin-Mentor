@@ -226,17 +226,23 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
                 # 1. Extract all tagged Chinese phrases
                 matches = re.findall(r'<tts>(.*?)</tts>', clean_text, flags=re.DOTALL)
                 
-                # 2. For each phrase, generate audio and build a compact 1-click player
+                # 2. For each phrase, generate audio and build a 1-click micro player
                 for phrase in matches:
                     audio_bytes = generate_audio(phrase)
                     if audio_bytes:
                         b64 = base64.b64encode(audio_bytes).decode()
+                        
+                        # The Window Trick: A 35px span hides the timeline, showing ONLY the play button
                         audio_html = f'''
-                        <audio controls controlsList="nodownload noplaybackrate" 
-                               style="height: 30px; width: 130px; vertical-align: middle; margin-left: 6px; border-radius: 20px;" 
-                               src="data:audio/mp3;base64,{b64}"></audio>
+                        <span style="display: inline-block; width: 35px; height: 35px; overflow: hidden; vertical-align: middle; border-radius: 50%; margin-left: 4px; box-shadow: 0px 2px 4px rgba(0,0,0,0.2);">
+                            <audio controls controlsList="nodownload noplaybackrate" 
+                                   style="height: 35px; width: 130px; margin-left: -2px;" 
+                                   src="data:audio/mp3;base64,{b64}"></audio>
+                        </span>
                         '''
-                        clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}** {audio_html.strip()}')
+                        
+                        # Added &nbsp; to prevent the Markdown link glitch!
+                        clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}**&nbsp;{audio_html.strip()}')
                     else:
                         clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}**')
                 
