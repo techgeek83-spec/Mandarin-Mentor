@@ -56,12 +56,18 @@ async def text_to_speech_async(text: str, voice: str = "zh-TW-YunJheNeural", rat
             audio_data += chunk["data"]
     return audio_data
 
-def generate_audio(text: str) -> bytes:
+# NEW: Fetch all audio phrases concurrently
+def generate_all_audio(phrases: list[str]) -> list[bytes]:
+    async def gather_audio():
+        # Create a task for every phrase and fire them all off at once
+        tasks = [text_to_speech_async(phrase) for phrase in phrases]
+        return await asyncio.gather(*tasks, return_exceptions=True)
+    
     try:
-        return asyncio.run(text_to_speech_async(text))
+        return asyncio.run(gather_audio())
     except Exception as e:
-        logging.error(f"TTS generation error: {e}")
-        return None
+        logging.error(f"Concurrent TTS error: {e}")
+        return [None] * len(phrases)
 
 # 4. Main App Title
 st.title("Mandarin Mentor")
@@ -223,29 +229,32 @@ if prompt := st.chat_input("Type your level and what you want to practice..."):
                 response = st.session_state.chat.send_message(prompt)
                 clean_text = response.text
                 
-                # 1. Extract all tagged Chinese phrases
+              # 1. Extract all tagged Chinese phrases
                 matches = re.findall(r'<tts>(.*?)</tts>', clean_text, flags=re.DOTALL)
                 
-                # 2. For each phrase, generate audio and build a 1-click micro player
-                for phrase in matches:
-                    audio_bytes = generate_audio(phrase)
-                    if audio_bytes:
+                # 2. Fetch all audio concurrently in one shot
+                if matches:
+                    audio_results = generate_all_audio(matches)
+                else:
+                    audio_results = []
+                
+                # 3. Build the 1-click micro players
+                for phrase, audio_bytes in zip(matches, audio_results):
+                    # Ensure the result is valid bytes (not an exception)
+                    if isinstance(audio_bytes, bytes):
                         b64 = base64.b64encode(audio_bytes).decode()
                         
-                        # The Window Trick: A 35px span hides the timeline, showing ONLY the play button
+                        # The Window Trick
                         audio_html = f'''
-                        <span style="display: inline-block; width: 35px; height: 35px; overflow: hidden; vertical-align: middle; border-radius: 50%; margin-left: 4px; box-shadow: 0px 2px 4px rgba(0,0,0,0.2);">
+                        <span style="display: inline-flex; justify-content: center; align-items: center; width: 32px; height: 32px; overflow: hidden; vertical-align: middle; border-radius: 50%; margin-left: 4px; box-shadow: 0px 2px 4px rgba(0,0,0,0.2);">
                             <audio controls controlsList="nodownload noplaybackrate" 
-                                   style="height: 35px; width: 130px; margin-left: -2px;" 
+                                   style="height: 40px; width: 130px; margin-left: 10px;" 
                                    src="data:audio/mp3;base64,{b64}"></audio>
                         </span>
                         '''
-                        
-                        # Added &nbsp; to prevent the Markdown link glitch!
                         clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}**&nbsp;{audio_html.strip()}')
                     else:
                         clean_text = clean_text.replace(f'<tts>{phrase}</tts>', f'**{phrase}**')
-                
                 # 3. Log token utilization telemetry
                 if response.usage_metadata:
                     prompt_tokens = response.usage_metadata.prompt_token_count
