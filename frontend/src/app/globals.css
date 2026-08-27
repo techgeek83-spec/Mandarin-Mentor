@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-brand: var(--font-outfit), sans-serif;
+  --font-sans: var(--font-nunito), sans-serif;
+
+  --color-jade: var(--brand-jade-primary);
+  --color-jade-hover: var(--brand-jade-hover);
+  --color-coral: var(--brand-coral);
+  --color-surface-app: var(--surface-app);
+  --color-surface-bubble: var(--surface-bubble-mentor);
+  --color-ink: var(--text-ink-primary);
+  --color-ink-muted: var(--text-ink-muted);
+  --color-border-subtle: var(--border-subtle);
+
+  --radius-bubble-user: 18px 18px 4px 18px;
+  --radius-bubble-mentor: 18px 18px 18px 4px;
+}
+
+:root {
+  --background: #FBFDFB;
+  --foreground: #1A1C29;
+  --brand-jade-primary: #00B074;
+  --brand-jade-hover: #00875A;
+  --brand-coral: #FF6B6B;
+  --surface-app: #f1f5f9;
+  --surface-bubble-mentor: #ffffff;
+  --text-ink: #0f172a;
+  --text-ink-muted: #64748b;
+  --border-subtle: #cbd5e1;
+}
+
+.dark {
+  --background: #0F172A;
+  --foreground: #F8FAFC;
+  --brand-jade-primary: #00C885;
+  --brand-jade-hover: #00A86E;
+  --brand-coral: #FF8787;
+  --surface-app: #0F172A;
+  --surface-bubble-mentor: #1E293B;
+  --text-ink-primary: #F8FAFC;
+  --text-ink-muted: #94A3B8;
+  --border-subtle: #334155;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), 'PingFang TC', 'Noto Sans TC', sans-serif;
+}
