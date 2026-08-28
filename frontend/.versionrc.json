@@ -1,6 +1,6 @@
 {
   "infile": "CHANGELOG.md",
   "scripts": {
-    "postchangelog": "powershell -Command \"Copy-Item CHANGELOG.md -Destination 'C:\\Users\\Dereck\\Documents\\Data\\Mandarin mentor\\CHANGELOG.md' -Force\""
+    "postchangelog": "powershell -Command \"Copy-Item CHANGELOG.md -Destination '../docs/CHANGELOG.md' -Force\""
   }
 }
