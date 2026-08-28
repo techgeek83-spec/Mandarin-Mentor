@@ -147,81 +147,126 @@ export default function Chat() {
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  // Architecture Note: Client-side WAV encoder for iOS Web Audio API fallback.
+// Converts raw Float32 PCM to 16-bit WAV, bypassing Safari's MediaRecorder payload corruption.
+function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  const writeString = (v: DataView, offset: number, string: string) => {
+    for (let i = 0; i < string.length; i++) v.setUint8(offset + i, string.charCodeAt(i));
+  };
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return new Blob([view], { type: 'audio/wav' });
+}
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  // Fallback refs for iOS Safari AudioContext PCM processing
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const pcmChunksRef = useRef<Float32Array[]>([]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
- async function startRecording() {
+  const uploadAudioBlob = async (blob: Blob, filename: string) => {
+    if (blob.size < 1000) return;
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, filename);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/transcribe`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`Transcription failed [${res.status}]: ${errBody}`);
+      }
+
+      const data = await res.json();
+      if (data.text) {
+        setInput((prev) => (prev ? `${prev} ${data.text}` : data.text));
+      }
+    } catch (error) {
+      console.error('Transcription error:', error);
+    } finally {
+      setIsTranscribing(false);
+      setIsRecording(false);
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
+    }
+  };
+
+  async function startRecording() {
     if (isRecording) return;
     try {
       // Architecture Note: Hardware-level downsampling to 16kHz mono. Whisper inherently processes at 16kHz. Doing this client-side slashes the binary payload size, directly reducing upload TTFB to the FastAPI backend.
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          sampleRate: 16000,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-        } 
+        audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true } 
       });
       mediaStreamRef.current = stream;
-      audioChunksRef.current = [];
 
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-      
-      // Architecture Note: Throttles bitrate to 32kbps. High fidelity is useless for STT; minimizing payload size is the primary lever for speed.
-      const recorder = new MediaRecorder(stream, { 
-        mimeType,
-        audioBitsPerSecond: 32000
-      });
+      // Feature Detection Gate: Prefer native WebM (Android/Chrome), fallback to PCM WAV (iOS Safari)
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported('audio/webm')) {
+        audioChunksRef.current = [];
+        // Architecture Note: Throttles bitrate to 32kbps. High fidelity is useless for STT; minimizing payload size is the primary lever for speed.
+        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm', audioBitsPerSecond: 32000 });
+        
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
 
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = async () => {
-        try {
+        recorder.onstop = () => {
           if (audioChunksRef.current.length === 0) return;
-
-          const mimeType = recorder.mimeType || 'audio/webm';
-          const blob = new Blob(audioChunksRef.current, { type: mimeType });
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           audioChunksRef.current = [];
+          uploadAudioBlob(blob, 'audio.webm');
+        };
 
-          if (blob.size < 1000) return;
+        recorder.start();
+        mediaRecorderRef.current = recorder;
+      } else {
+        // Architecture Note: Web Audio API intercept bypasses Safari's MP4/MediaRecorder bugs by capturing raw PCM via ScriptProcessorNode.
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const audioCtx = new AudioContextClass({ sampleRate: 16000 });
+        audioContextRef.current = audioCtx;
+        
+        const source = audioCtx.createMediaStreamSource(stream);
+        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        processorRef.current = processor;
+        pcmChunksRef.current = [];
 
-          setIsTranscribing(true);
-          const formData = new FormData();
-          formData.append('file', blob, 'audio.webm');
+        processor.onaudioprocess = (e) => {
+          pcmChunksRef.current.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+        };
 
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/transcribe`, {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!res.ok) {
-            const errBody = await res.text();
-            throw new Error(`Transcription failed [${res.status}]: ${errBody}`);
-          }
-
-          const data = await res.json();
-          if (data.text) {
-            setInput((prev) => (prev ? `${prev} ${data.text}` : data.text));
-          }
-        } catch (error) {
-          console.error('Transcription error:', error);
-        } finally {
-          setIsTranscribing(false);
-          setIsRecording(false);
-          if (mediaStreamRef.current) {
-            mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-            mediaStreamRef.current = null;
-          }
-        }
-      };
-
-      recorder.start();
-      mediaRecorderRef.current = recorder;
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+      }
+      
       setIsRecording(true);
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -229,13 +274,35 @@ export default function Chat() {
     }
   }
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-      mediaStreamRef.current = null;
+      mediaRecorderRef.current.stop(); // Triggers onstop which handles the upload
+    } else if (processorRef.current && audioContextRef.current) {
+      // Finalize and encode PCM buffer for iOS Fallback
+      processorRef.current.disconnect();
+      processorRef.current = null;
+      await audioContextRef.current.close();
+      audioContextRef.current = null;
+      
+      setIsRecording(false);
+
+      const totalLength = pcmChunksRef.current.reduce((acc, val) => acc + val.length, 0);
+      const flatPCM = new Float32Array(totalLength);
+      let offset = 0;
+      for (const chunk of pcmChunksRef.current) {
+        flatPCM.set(chunk, offset);
+        offset += chunk.length;
+      }
+      pcmChunksRef.current = [];
+
+      const wavBlob = encodeWAV(flatPCM, 16000);
+      uploadAudioBlob(wavBlob, 'audio.wav');
+    } else {
+      // Ensure tracks close if stopped prematurely without active state
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
     }
   };
   
