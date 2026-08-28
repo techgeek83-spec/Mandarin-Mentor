@@ -2,21 +2,27 @@ import asyncpg
 from typing import List, Dict, Any, Optional
 import uuid
 
+# Architectural Note: In-memory UUID lookup cache eliminates redundant SELECT/INSERT roundtrips to Supabase over WAN on every conversation turn.
+SESSION_CACHE: Dict[str, uuid.UUID] = {}
+
 async def get_or_create_session(pool: asyncpg.Pool, session_name: str) -> uuid.UUID:
-    """Architectural Note: Resolves or provisions a persistent session UUID mapped to a human-readable session key."""
+    """Architectural Note: Resolves or provisions a persistent session UUID mapped to a human-readable session key, leveraging an in-memory cache to prevent blocking database round-trips."""
+    if session_name in SESSION_CACHE:
+        return SESSION_CACHE[session_name]
+
     async with pool.acquire() as connection:
-        # Check if a session metadata record exists storing this name, or fallback to a deterministic/default session
         row = await connection.fetchrow(
             "SELECT id FROM sessions WHERE metadata->>'name' = $1 LIMIT 1", session_name
         )
         if row:
+            SESSION_CACHE[session_name] = row["id"]
             return row["id"]
         
-        # Create new session if none exists
         new_id = await connection.fetchval(
             "INSERT INTO sessions (metadata) VALUES ($1::jsonb) RETURNING id",
             f'{{"name": "{session_name}"}}'
         )
+        SESSION_CACHE[session_name] = new_id
         return new_id
 
 async def load_session(pool: asyncpg.Pool, session_name: str) -> List[Dict[str, Any]]:

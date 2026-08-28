@@ -149,29 +149,27 @@ async def get_session_history(request: Request):
 @app.post("/api/chat", dependencies=[Depends(rate_limit(capacity=10, refill_rate=0.2))])
 async def chat_stream(http_request: Request, request: ChatRequest):
     pool = http_request.app.state.pool
-    history_records = await load_session(pool, SESSION_ID) or []
-    
-    # Architectural Note: Fire user message persistence asynchronously to remove WAN round-trip latency from the TTFB critical path.
-    asyncio.create_task(save_message(pool, SESSION_ID, "user", request.prompt))
-    history_records.append({"role": "user", "content": request.prompt})
-    
-    # 2. Non-destructive payload generation (strictly the last 10 turns)
-    MAX_CONTEXT = 10
-    gemini_payload = history_records[-MAX_CONTEXT:]
-    
-    # 3. Build SDK contents using the TRUNCATED payload
-    contents = [
-        types.Content(
-            role="model" if msg["role"] == "assistant" else "user",
-            parts=[types.Part.from_text(text=msg["content"])]
-        )
-        for msg in gemini_payload
-    ]
-
     async def event_stream():
         full_response = ""
         try:
-            # Architectural Note: Target gemini-2.5-flash-lite (or gemini-flash-lite-latest) with direct streaming generation.
+            # Architectural Note: History load occurs inside the streaming generator to establish the SSE handshake immediately.
+            history_records = await load_session(pool, SESSION_ID) or []
+            
+            # Persist incoming user prompt to PostgreSQL in a non-blocking background task
+            asyncio.create_task(save_message(pool, SESSION_ID, "user", request.prompt))
+            history_records.append({"role": "user", "content": request.prompt})
+            
+            MAX_CONTEXT = 10
+            gemini_payload = history_records[-MAX_CONTEXT:]
+            
+            contents = [
+                types.Content(
+                    role="model" if msg["role"] == "assistant" else "user",
+                    parts=[types.Part.from_text(text=msg["content"])]
+                )
+                for msg in gemini_payload
+            ]
+
             response_stream = await client.aio.models.generate_content_stream(
                 model="gemini-flash-lite-latest", 
                 contents=contents,
@@ -193,7 +191,7 @@ async def chat_stream(http_request: Request, request: ChatRequest):
             yield "data: [DONE]\n\n"
             
         finally:
-            # Architectural Note: Offload assistant response persistence to background task upon stream termination.
+            # Architectural Note: Persist completed assistant stream asynchronously on teardown.
             if full_response:
                 asyncio.create_task(save_message(pool, SESSION_ID, "assistant", full_response))
 
