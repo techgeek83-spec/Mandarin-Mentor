@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.1.5](https://github.com/techgeek83-spec/Mandarin-Mentor/compare/v0.1.4...v0.1.5) (2026-08-28)
+
+### Bug Fixes
+
+* **api:** rebuild live stream endpoint and drop dead redis dependencies ([9ef4882](https://github.com/techgeek83-spec/Mandarin-Mentor/commit/9ef4882972170e0dd1db0e6f589208ae26a33e49))
+* **api:** strip dead redis rate limiter dependencies causing 4s tcp timeouts ([5cca353](https://github.com/techgeek83-spec/Mandarin-Mentor/commit/5cca3536d92fc6ca82dabb2bce05eeacdbbe03a1))
+* **api:** strip LLM html tags for regex ast compatibility and enforce sse network flush ([e9d70be](https://github.com/techgeek83-spec/Mandarin-Mentor/commit/e9d70be7d7a606c49b536d2a31600e97aee911a1))
+* **frontend:** harden reactmarkdown ast hanzi extraction for custom tts nodes ([2d63ff1](https://github.com/techgeek83-spec/Mandarin-Mentor/commit/2d63ff1aa1cf3f06c956894f2b1f5d3f5861852d))
+* **prompt:** implement contrastive syntax guards and frontend regex wrapper fallback ([f0bed2a](https://github.com/techgeek83-spec/Mandarin-Mentor/commit/f0bed2adc8c156858c13b2525401db971578e30f))
+* **prompt:** restore proven ast-injection system prompt with xml safety bounds ([b44fc4a](https://github.com/techgeek83-spec/Mandarin-Mentor/commit/b44fc4aeeeb3ea203ff15d38e52779aa98450424))
 ## [0.1.4](///compare/v0.1.3...v0.1.4) (2026-08-28)
 
 ### Features

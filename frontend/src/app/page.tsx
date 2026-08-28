@@ -699,9 +699,13 @@ const sendPayload = async (userPrompt: string) => {
                   ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
                 }}
               >
-                {/* Architecture Note: Dynamic regex fallback. If the LLM leaks naked <ruby> tags without a <tts-> wrapper, this forces them into an inline audio pill before AST parsing to prevent UI breakage. */}
+                {/* Architecture Note: Token-aware AST pre-processor. Safely bypasses correctly wrapped <tts-block> and <tts-inline> nodes. Captures orphaned/naked <ruby> sequences in raw paragraph text and wraps them in a single <tts-inline> payload, preventing nested UI collisions and fragmented audio pills. */}
                 {msg.role === 'assistant' 
-                  ? sanitizePinyinLeak(msg.content).replace(/(?<!<tts-(?:inline|block)>)((?:<ruby>.*?<\/ruby>)+)(?!<\/tts-(?:inline|block)>)/g, '<tts-inline>$1</tts-inline>') 
+                  ? sanitizePinyinLeak(msg.content).replace(/(<tts-(?:inline|block)>[\s\S]*?<\/tts-(?:inline|block)>)|((?:<ruby>[\s\S]*?<\/ruby>[\s]*)+)/g, (match, preservedBlock, nakedRubies) => {
+                      if (preservedBlock) return preservedBlock;
+                      if (nakedRubies) return `<tts-inline>${nakedRubies.trim()}</tts-inline>`;
+                      return match;
+                    })
                   : msg.content}
               </ReactMarkdown>
             </div>

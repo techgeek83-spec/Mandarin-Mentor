@@ -36,18 +36,13 @@ async def load_session(pool: asyncpg.Pool, session_name: str) -> List[Dict[str, 
         return [{"role": row["role"], "content": row["content"]} for row in rows]
 
 async def save_message(pool: asyncpg.Pool, session_name: str, role: str, content: str):
-    """Architectural Note: Appends a single message transactionally to the database."""
+    """Architectural Note: Resolves session UUID via get_or_create_session prior to message insertion to strictly prevent foreign key constraint violations during asynchronous background writes."""
     session_id = await get_or_create_session(pool, session_name)
     async with pool.acquire() as connection:
-        async with connection.transaction():
-            await connection.execute(
-                "INSERT INTO messages (session_id, role, content) VALUES ($1, $2, $3)",
-                session_id, role, content
-            )
-            await connection.execute(
-                "UPDATE sessions SET updated_at = NOW() WHERE id = $1",
-                session_id
-            )
+        await connection.execute(
+            "INSERT INTO messages (session_id, role, content) VALUES ($1, $2, $3)",
+            session_id, role, content
+        )
 
 async def clear_session(pool: asyncpg.Pool, session_name: str):
     """Architectural Note: Cascades deletion or purges messages for the active session key."""

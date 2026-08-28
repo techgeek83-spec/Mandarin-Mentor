@@ -125,12 +125,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "decisions/ADR-015-Contrastive-Prompting.md",
+                "file": "decisions/ADR-015-Contrastive-Prompting-and-ratiometric-tone-control.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ADR-015-Contrastive-Prompting"
+              "title": "ADR-015-Contrastive-Prompting-and-ratiometric-tone-control"
             }
           }
         ],
@@ -196,7 +196,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 299.5
   },
   "right": {
     "id": "25c331e5cd107795",
@@ -212,7 +212,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "decisions/ADR-015-Contrastive-Prompting.md",
+                "file": "decisions/ADR-015-Contrastive-Prompting-and-ratiometric-tone-control.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -231,7 +231,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "decisions/ADR-015-Contrastive-Prompting.md",
+                "file": "decisions/ADR-015-Contrastive-Prompting-and-ratiometric-tone-control.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -274,7 +274,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "decisions/ADR-015-Contrastive-Prompting.md",
+                "file": "decisions/ADR-015-Contrastive-Prompting-and-ratiometric-tone-control.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -301,22 +301,22 @@
       "bases:Create new base": false
     }
   },
-  "active": "8a9300bbe8c4db27",
+  "active": "2e7e416626f49884",
   "lastOpenFiles": [
     "decisions/ADR-014-reinstating-llm-driven-ast-tagging.md",
-    "decisions/ADR-015-Contrastive-Prompting.md",
     "decisions/ADR-013-sse-headers-and-ast-reversion.md",
     "decisions/ADR-012-pinning-gemini-3-5-flash-lite.md",
+    "decisions/ADR-015-Contrastive-Prompting-and-ratiometric-tone-control.md",
+    "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
+    "decisions/ADR-009-removal-of-legacy-ephemeral-file-persistence.md",
+    "architecture-state.md",
+    "CHANGELOG.md",
+    "Development notes.md",
     "decisions/ADR-011-async-db-pipe-and-flash-lite-migration.md",
     "decisions/ADR-010-dynamic-session-routing-and-state-hydration.md",
     "decisions/ADR-008-migration-to-postgressql.md",
-    "decisions/ADR-009-removal-of-legacy-ephemeral-file-persistence.md",
     "Cloud-deployment-workflow.md",
-    "CHANGELOG.md",
-    "architecture-state.md",
     "api-contracts.md",
-    "Development notes.md",
-    "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
     "decisions/ADR-001-cjk-fonts.md",
     "decisions/ADR-002-stt-runtime.md",
     "decisions/ADR-003-pwa-alpha-deployment.md",
