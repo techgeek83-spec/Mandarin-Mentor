@@ -223,6 +223,14 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
   async function startRecording() {
     if (isRecording) return;
     try {
+      // Architecture Note: iOS Safari aggressively suspends AudioContexts created outside of direct, synchronous user gestures (like clicks). We MUST instantiate and resume the context immediately on click, BEFORE awaiting the microphone stream, otherwise the fallback silently fails.
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioCtx = new AudioContextClass({ sampleRate: 16000 });
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+      audioContextRef.current = audioCtx;
+
       // Architecture Note: Hardware-level downsampling to 16kHz mono. Whisper inherently processes at 16kHz. Doing this client-side slashes the binary payload size, directly reducing upload TTFB to the FastAPI backend.
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true } 
@@ -250,10 +258,6 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
         mediaRecorderRef.current = recorder;
       } else {
         // Architecture Note: Web Audio API intercept bypasses Safari's MP4/MediaRecorder bugs by capturing raw PCM via ScriptProcessorNode.
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        const audioCtx = new AudioContextClass({ sampleRate: 16000 });
-        audioContextRef.current = audioCtx;
-        
         const source = audioCtx.createMediaStreamSource(stream);
         const processor = audioCtx.createScriptProcessor(4096, 1, 1);
         processorRef.current = processor;
