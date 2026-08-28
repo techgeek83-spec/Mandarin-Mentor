@@ -55,7 +55,7 @@ SESSION_ID = "mandarin_session"
 # Architecture Note: Dynamic System Prompt generator scaling instructional language and pinyin density based on client proficiency, while strictly enforcing Markdown/AST routing constraints against English hallucination.
 def get_system_prompt(proficiency: str) -> str:
 # ==== SURGICAL DIFF
-    # Architecture Note: Reinstated the verbose AST-injection prompt. Hardened with strict XML-validation instructions to prevent unclosed tags from panicking the frontend ReactMarkdown renderer.
+    # Architecture Note: Restored verbose AST-injection prompt with strict HTML closure constraints.
     if "我知道" in proficiency:
         tone = "Use primarily Taiwanese Mandarin for explanations, resorting to English only for complex nuance."
     elif "Ordering Food" in proficiency:
@@ -74,7 +74,7 @@ Never write conversational sentences in unannotated Chinese.
 # Phonetics & CJK Display (FATAL UI CRASH IF IGNORED)
 You MUST wrap ALL Traditional Chinese characters in standard HTML ruby tags with their corresponding pinyin.
 This strictly includes ALL grammatical particles and structural characters (e.g., 的, 了, 嗎, 在). Do not skip a single character.
-Format strictly character-by-character to prevent alignment errors: <ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby>. 
+Format strictly as: <ruby>捷運<rt>jié yùn</rt></ruby>. 
 NEVER output pinyin in parentheses following the characters.
 CRITICAL: Ensure every single HTML tag is perfectly closed. Unclosed tags will fatally crash the application.
 
@@ -85,11 +85,11 @@ CRITICAL: Ensure every single HTML tag is perfectly closed. Unclosed tags will f
 
 REQUIRED FORMAT PATTERN:
 Dialogue:
-<tts-block>A: <ruby>請<rt>qǐng</rt></ruby><ruby>問<rt>wèn</rt></ruby>，<ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby><ruby>站<rt>zhàn</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>哪<rt>nǎ</rt></ruby>？</tts-block>
+<tts-block>A: <ruby>請<rt>qǐng</rt></ruby><ruby>問<rt>wèn</rt></ruby>，<ruby>捷運<rt>jié yùn</rt></ruby><ruby>站<rt>zhàn</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>哪<rt>nǎ</rt></ruby>？</tts-block>
 <tts-block>B: <ruby>就<rt>jiù</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>前<rt>qián</rt></ruby><ruby>面<rt>miàn</rt></ruby>。</tts-block>
 
 Vocabulary Breakdown:
-* <tts-inline><ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby></tts-inline> - MRT / subway
+* <tts-inline><ruby>捷運<rt>jié yùn</rt></ruby></tts-inline> - MRT / subway
 * <tts-inline><ruby>前<rt>qián</rt></ruby><ruby>面<rt>miàn</rt></ruby></tts-inline> - Ahead / in front
 """
 
@@ -169,6 +169,20 @@ async def chat_stream(http_request: Request, request: ChatRequest):
                 for msg in gemini_payload
             ]
 
+           # Architectural Note: Diagnostic bypass to isolate TTFB. Generates a dummy stream to rule out LLM API latency.
+            class DummyChunk:
+                def __init__(self, text):
+                    self.text = text
+
+            async def mock_gemini():
+                yield DummyChunk("<tts-block><ruby>測<rt>cè</rt></ruby><ruby>試<rt>shì</rt></ruby></tts-block>")
+                await asyncio.sleep(0.1)
+                yield DummyChunk(" Diagnostic bypass complete.")
+
+            response_stream = mock_gemini()
+            
+            """ 
+            # Temporarily comment out the real API call
             response_stream = await client.aio.models.generate_content_stream(
                 model="gemini-flash-lite-latest", 
                 contents=contents,
@@ -177,6 +191,7 @@ async def chat_stream(http_request: Request, request: ChatRequest):
                     temperature=0.7
                 )
             )
+            """
             async for chunk in response_stream:
                 if chunk.text:
                     full_response += chunk.text
