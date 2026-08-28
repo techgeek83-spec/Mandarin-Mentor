@@ -90,9 +90,23 @@
               "icon": "lucide-file",
               "title": "ADR-012-pinning-gemini-3-5-flash-lite"
             }
+          },
+          {
+            "id": "bc6ab034d25b8549",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "decisions/ADR-013-sse-headers-and-ast-reversion.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "ADR-013-sse-headers-and-ast-reversion"
+            }
           }
         ],
-        "currentTab": 5
+        "currentTab": 6
       }
     ],
     "direction": "vertical"
@@ -170,7 +184,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "decisions/ADR-012-pinning-gemini-3-5-flash-lite.md",
+                "file": "decisions/ADR-013-sse-headers-and-ast-reversion.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -189,7 +203,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "decisions/ADR-012-pinning-gemini-3-5-flash-lite.md",
+                "file": "decisions/ADR-013-sse-headers-and-ast-reversion.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -232,7 +246,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "decisions/ADR-012-pinning-gemini-3-5-flash-lite.md",
+                "file": "decisions/ADR-013-sse-headers-and-ast-reversion.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -261,8 +275,9 @@
   },
   "active": "8a9300bbe8c4db27",
   "lastOpenFiles": [
-    "decisions/ADR-011-async-db-pipe-and-flash-lite-migration.md",
     "decisions/ADR-012-pinning-gemini-3-5-flash-lite.md",
+    "decisions/ADR-013-sse-headers-and-ast-reversion.md",
+    "decisions/ADR-011-async-db-pipe-and-flash-lite-migration.md",
     "decisions/ADR-010-dynamic-session-routing-and-state-hydration.md",
     "decisions/ADR-008-migration-to-postgressql.md",
     "decisions/ADR-009-removal-of-legacy-ephemeral-file-persistence.md",
@@ -286,7 +301,6 @@
     "Mandarin mentor/architecture-state.md",
     "Mandarin mentor/CHANGELOG.md",
     "Mandarin mentor/decisions/ADR-003-pwa-alpha-deployment.md",
-    "Mandarin mentor/decisions/ADR-004-alpha-runtime-target.md",
     "decisions",
     "Mandarin mentor/decisions",
     "Mandarin mentor"

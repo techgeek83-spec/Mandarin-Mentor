@@ -195,7 +195,16 @@ async def chat_stream(http_request: Request, request: ChatRequest):
             if full_response:
                 asyncio.create_task(save_message(pool, SESSION_ID, "assistant", full_response))
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    # Architectural Note: Explicit anti-buffering headers force Uvicorn and intermediate proxies to flush chunks immediately, restoring sub-second visual TTFB in the browser.
+    return StreamingResponse(
+        event_stream(), 
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 @app.post("/api/reset")
 async def reset_session(request: Request):
