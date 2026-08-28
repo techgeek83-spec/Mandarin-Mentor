@@ -97,7 +97,7 @@ class ChatRequest(BaseModel):
 class TTSRequest(BaseModel):
     text: str
     voice: str = "zh-TW-HsiaoChenNeural"
-    rate: str = "-25%"
+    rate: str = "+0%"
 
 @app.post("/api/transcribe", dependencies=[Depends(rate_limit(capacity=15, refill_rate=0.33))])
 async def transcribe_audio(file: UploadFile = File(...)):
@@ -220,12 +220,25 @@ async def generate_tts(request: TTSRequest):
         elif not safe_rate.startswith(("+", "-")):
             safe_rate = f"+{safe_rate}"
 
+        # Architecture Note: Default to HsiaoChen; if synthesis yields no bytes or errors, fallback to HsiaoYu to ensure audio continuity.
         communicate = edge_tts.Communicate(request.text, request.voice, rate=safe_rate)
         audio_data = b""
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 audio_data += chunk["data"]
+
+        if not audio_data:
+            fallback = edge_tts.Communicate(request.text, "zh-TW-HsiaoYuNeural", rate="+0%")
+            async for chunk in fallback.stream():
+                if chunk["type"] == "audio":
+                    audio_data += chunk["data"]
+
+        if not audio_data:
+            raise HTTPException(status_code=502, detail="TTS upstream service produced empty audio stream.")
+
         b64_audio = base64.b64encode(audio_data).decode('utf-8')
         return {"audio": b64_audio}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
