@@ -150,9 +150,9 @@ async def chat_stream(http_request: Request, request: ChatRequest):
     pool = http_request.app.state.pool
     history_records = await load_session(pool, SESSION_ID) or []
     
-    # 1. Append the new user prompt to the REAL history and persist immediately
+    # Architectural Note: Fire user message persistence asynchronously to remove WAN round-trip latency from the TTFB critical path.
+    asyncio.create_task(save_message(pool, SESSION_ID, "user", request.prompt))
     history_records.append({"role": "user", "content": request.prompt})
-    await save_message(pool, SESSION_ID, "user", request.prompt)
     
     # 2. Non-destructive payload generation (strictly the last 10 turns)
     MAX_CONTEXT = 10
@@ -170,7 +170,7 @@ async def chat_stream(http_request: Request, request: ChatRequest):
     async def event_stream():
         full_response = ""
         try:
-            # Architecture Note: Consolidated try/except block. The previous iteration introduced a nested `try:` without a matching `except:` or `finally:`, triggering a Python SyntaxError.
+            # Architectural Note: Target gemini-2.5-flash-lite (or gemini-flash-lite-latest) with direct streaming generation.
             response_stream = await client.aio.models.generate_content_stream(
                 model="gemini-flash-lite-latest", 
                 contents=contents,
@@ -192,15 +192,9 @@ async def chat_stream(http_request: Request, request: ChatRequest):
             yield "data: [DONE]\n\n"
             
         finally:
-            # Guarantee state reconciliation regardless of network drops or API errors
+            # Architectural Note: Offload assistant response persistence to background task upon stream termination.
             if full_response:
-                history_records.append({"role": "assistant", "content": full_response})
-                await save_message(pool, SESSION_ID, "assistant", full_response)
-            else:
-                # Revert user prompt to prevent history corruption if LLM hard-crashed
-                if history_records and history_records[-1].get("role") == "user":
-                    history_records.pop()
-                    # Note: Database persistence already wrote the user prompt; a robust rollback can be added if required, but streaming completion guards normally prevent this.
+                asyncio.create_task(save_message(pool, SESSION_ID, "assistant", full_response))
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
