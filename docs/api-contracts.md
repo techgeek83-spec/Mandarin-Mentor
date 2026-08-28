@@ -10,9 +10,8 @@
 }
 ````
 
-- **Status Codes:** `200 OK`, `500 Internal Server Error` (Groq failure).
+- **Status Codes:** `200 OK`, `429 Too Many Requests` (Redis Token Bucket), `500 Internal Server Error` (Groq failure).
     
-
 2. Chat Streaming Endpoint (`POST /api/chat`)
 
 * **Protocol:** Server-Sent Events (`text/event-stream`).
@@ -53,6 +52,6 @@ JSON
 }
 ```
 
-- **Response:** Binary audio stream (`audio/mpeg`).
-    
-- **Caching Headers:** `Cache-Control: public, max-age=86400`.
+- **Response:** JSON payload containing base64 encoded audio: `{"audio": "base64_encoded_string"}`
+- **Resilience:** Automatic fallback to `zh-TW-HsiaoYuNeural` on primary upstream WebSocket failure (502).
+- **Status Codes:** `200 OK`, `429 Too Many Requests`, `502 Bad Gateway` (Upstream TTS provider offline).

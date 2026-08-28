@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
+                "file": "architecture-state.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ADR-007-ios-safari-webaudio-pcm-downsampler"
+              "title": "architecture-state"
             }
           }
         ]
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
+                "file": "architecture-state.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -118,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
+                "file": "architecture-state.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -161,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
+                "file": "architecture-state.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -190,7 +190,10 @@
   },
   "active": "157bbd1f010464a6",
   "lastOpenFiles": [
+    "api-contracts.md",
     "CHANGELOG.md",
+    "Development notes.md",
+    "architecture-state.md",
     "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
     "decisions/ADR-001-cjk-fonts.md",
     "decisions/ADR-002-stt-runtime.md",
@@ -198,11 +201,8 @@
     "decisions/ADR-004-alpha-runtime-target.md",
     "decisions/ADR-005-sse-buffering-and-audio-concurrency.md",
     "decisions/ADR-006-redis-token-bucket-rate-limiting.md",
-    "api-contracts.md",
     "Mandarin mentor/decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
     "progressive-web-app.md",
-    "Development notes.md",
-    "architecture-state.md",
     "Mandarin mentor/Development notes.md",
     "Mandarin mentor/progressive-web-app.md",
     "Mandarin mentor/api-contracts.md",
