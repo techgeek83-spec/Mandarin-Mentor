@@ -1,0 +1,17 @@
+node_modules/
+.next/
+
+# Environment Variables & Secrets
+.env
+.env*.local
+backend/.env
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+backend/__pycache__/
+
+# Local Storage & Sessions
+backend/sessions/
+*.json.bak
