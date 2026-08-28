@@ -6,11 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from rate_limiter import limiter
+from rate_limiter import limiter, rate_limit
 
 # Architecture Note: Manage lifecycle events for Redis connection pool cleanly.
 @asynccontextmanager
@@ -99,12 +99,8 @@ class TTSRequest(BaseModel):
     voice: str = "zh-TW-HsiaoChenNeural"
     rate: str = "-25%"
 
-@app.post("/api/transcribe")
-async def transcribe_audio(
-    file: UploadFile = File(...),
-    req: Request = None,
-    _ = Depends(lambda req: limiter.check_rate_limit(req, capacity=15, refill_rate=0.33))
-):
+@app.post("/api/transcribe", dependencies=[Depends(rate_limit(capacity=15, refill_rate=0.33))])
+async def transcribe_audio(file: UploadFile = File(...)):
     if not groq_client:
         raise HTTPException(status_code=500, detail="Groq API key not configured on backend.")
     
@@ -143,12 +139,8 @@ async def get_session_history():
     return {"messages": history if history else []}
 
 # Architecture Note: Streams raw token chunks over SSE without blocking server thread
-@app.post("/api/chat")
-async def chat_stream(
-    request: ChatRequest,
-    req: Request,
-    _ = Depends(lambda req: limiter.check_rate_limit(req, capacity=10, refill_rate=0.2))
-):
+@app.post("/api/chat", dependencies=[Depends(rate_limit(capacity=10, refill_rate=0.2))])
+async def chat_stream(request: ChatRequest):
     history_records = load_session(SESSION_ID) or []
     
     # 1. Append the new user prompt to the REAL history
@@ -216,12 +208,8 @@ async def reset_session():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reset server session: {str(e)}")
 
-@app.post("/api/tts")
-async def generate_tts(
-    request: TTSRequest,
-    req: Request,
-    _ = Depends(lambda req: limiter.check_rate_limit(req, capacity=40, refill_rate=1.0))
-):
+@app.post("/api/tts", dependencies=[Depends(rate_limit(capacity=40, refill_rate=1.0))])
+async def generate_tts(request: TTSRequest):
     if not request.text:
         raise HTTPException(status_code=400, detail="Text payload required")
     try:
