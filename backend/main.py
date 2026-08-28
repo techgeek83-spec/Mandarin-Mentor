@@ -104,7 +104,8 @@ class TTSRequest(BaseModel):
     voice: str = "zh-TW-HsiaoChenNeural"
     rate: str = "+0%"
 
-@app.post("/api/transcribe", dependencies=[Depends(rate_limit(capacity=15, refill_rate=0.33))])
+# Architectural Note: Rate limiting temporarily stripped to eliminate 4000ms+ TCP timeout delays caused by an offline local Redis instance.
+@app.post("/api/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)):
     if not groq_client:
         raise HTTPException(status_code=500, detail="Groq API key not configured on backend.")
@@ -144,8 +145,8 @@ async def get_session_history(request: Request):
     history = await load_session(pool, SESSION_ID)
     return {"messages": history if history else []}
 
-# Architecture Note: Streams raw token chunks over SSE without blocking server thread
-@app.post("/api/chat", dependencies=[Depends(rate_limit(capacity=10, refill_rate=0.2))])
+# Architecture Note: Streams raw token chunks over SSE without blocking server thread. Rate limiter removed to prevent TCP timeout.
+@app.post("/api/chat")
 async def chat_stream(http_request: Request, request: ChatRequest):
     pool = http_request.app.state.pool
     async def event_stream():
@@ -230,7 +231,8 @@ async def reset_session(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reset database session: {str(e)}")
 
-@app.post("/api/tts", dependencies=[Depends(rate_limit(capacity=40, refill_rate=1.0))])
+# Architectural Note: Rate limiter removed to prevent Redis connection timeout block.
+@app.post("/api/tts")
 async def generate_tts(request: TTSRequest):
     if not request.text:
         raise HTTPException(status_code=400, detail="Text payload required")
