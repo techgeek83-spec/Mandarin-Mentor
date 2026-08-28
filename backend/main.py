@@ -221,17 +221,27 @@ async def generate_tts(request: TTSRequest):
             safe_rate = f"+{safe_rate}"
 
         # Architecture Note: Default to HsiaoChen; if synthesis yields no bytes or errors, fallback to HsiaoYu to ensure audio continuity.
-        communicate = edge_tts.Communicate(request.text, request.voice, rate=safe_rate)
         audio_data = b""
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_data += chunk["data"]
-
-        if not audio_data:
-            fallback = edge_tts.Communicate(request.text, "zh-TW-HsiaoYuNeural", rate="+0%")
-            async for chunk in fallback.stream():
+        
+        # Architecture Note: Isolate primary TTS attempt. edge-tts raises a hard exception if the 
+        # MS WebSocket drops. We must catch it locally so it does not bypass the fallback logic.
+        try:
+            communicate = edge_tts.Communicate(request.text, request.voice, rate=safe_rate)
+            async for chunk in communicate.stream():
                 if chunk["type"] == "audio":
                     audio_data += chunk["data"]
+        except Exception as primary_err:
+            print(f"[TTS Warning] Primary voice {request.voice} failed ({primary_err}). Triggering HsiaoYu fallback.")
+            audio_data = b""
+
+        if not audio_data:
+            try:
+                fallback = edge_tts.Communicate(request.text, "zh-TW-HsiaoYuNeural", rate=safe_rate)
+                async for chunk in fallback.stream():
+                    if chunk["type"] == "audio":
+                        audio_data += chunk["data"]
+            except Exception as fallback_err:
+                raise HTTPException(status_code=502, detail=f"TTS upstream failed entirely on all voices: {fallback_err}")
 
         if not audio_data:
             raise HTTPException(status_code=502, detail="TTS upstream service produced empty audio stream.")
