@@ -54,7 +54,7 @@ SESSION_ID = "mandarin_session"
 
 # Architecture Note: Dynamic System Prompt generator scaling instructional language and pinyin density based on client proficiency, while strictly enforcing Markdown/AST routing constraints against English hallucination.
 def get_system_prompt(proficiency: str) -> str:
-# Architectural Note: Re-engineered with Contrastive Prompting (WRONG/CORRECT) and explicit percentage ratios to force formatting adherence on Flash-tier models without context drift.
+# Architectural Note: Implemented Contrastive Prompting (WRONG/CORRECT) and explicit percentage ratios. LLMs map heavily to structural examples; negative constraints alone result in context drift and tag leakage.
     if "我知道" in proficiency:
         tone = "Explain concepts using a mix of 50% Taiwanese Mandarin and 50% English. Do not use 100% Mandarin."
     elif "Ordering Food" in proficiency:

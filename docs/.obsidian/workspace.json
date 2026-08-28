@@ -125,12 +125,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "decisions/ADR-015-Contrastive-Prompting-and-ratiometric-tone-control.md",
+                "file": "Development notes.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ADR-015-Contrastive-Prompting-and-ratiometric-tone-control"
+              "title": "Development notes"
             }
           }
         ],
@@ -303,10 +303,10 @@
   },
   "active": "2e7e416626f49884",
   "lastOpenFiles": [
+    "decisions/ADR-015-Contrastive-Prompting-and-ratiometric-tone-control.md",
     "decisions/ADR-014-reinstating-llm-driven-ast-tagging.md",
     "decisions/ADR-013-sse-headers-and-ast-reversion.md",
     "decisions/ADR-012-pinning-gemini-3-5-flash-lite.md",
-    "decisions/ADR-015-Contrastive-Prompting-and-ratiometric-tone-control.md",
     "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
     "decisions/ADR-009-removal-of-legacy-ephemeral-file-persistence.md",
     "architecture-state.md",
