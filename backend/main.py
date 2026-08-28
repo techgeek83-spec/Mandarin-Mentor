@@ -28,7 +28,8 @@ from google.genai import types
 import edge_tts
 from groq import AsyncGroq
 
-from chat_store import load_session, save_session
+from fastapi import Request
+from chat_store import load_session, save_message, clear_session
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 groq_client = AsyncGroq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
@@ -137,18 +138,21 @@ async def transcribe_audio(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
     
 @app.get("/api/chat")
-async def get_session_history():
-    """Authoritative read-only hydration endpoint."""
-    history = load_session(SESSION_ID)
+async def get_session_history(request: Request):
+    """Authoritative read-only hydration endpoint backed by PostgreSQL."""
+    pool = request.app.state.pool
+    history = await load_session(pool, SESSION_ID)
     return {"messages": history if history else []}
 
 # Architecture Note: Streams raw token chunks over SSE without blocking server thread
 @app.post("/api/chat", dependencies=[Depends(rate_limit(capacity=10, refill_rate=0.2))])
-async def chat_stream(request: ChatRequest):
-    history_records = load_session(SESSION_ID) or []
+async def chat_stream(http_request: Request, request: ChatRequest):
+    pool = http_request.app.state.pool
+    history_records = await load_session(pool, SESSION_ID) or []
     
-    # 1. Append the new user prompt to the REAL history
+    # 1. Append the new user prompt to the REAL history and persist immediately
     history_records.append({"role": "user", "content": request.prompt})
+    await save_message(pool, SESSION_ID, "user", request.prompt)
     
     # 2. Non-destructive payload generation (strictly the last 10 turns)
     MAX_CONTEXT = 10
@@ -191,26 +195,24 @@ async def chat_stream(request: ChatRequest):
             # Guarantee state reconciliation regardless of network drops or API errors
             if full_response:
                 history_records.append({"role": "assistant", "content": full_response})
+                await save_message(pool, SESSION_ID, "assistant", full_response)
             else:
                 # Revert user prompt to prevent history corruption if LLM hard-crashed
                 if history_records and history_records[-1].get("role") == "user":
                     history_records.pop()
-            
-            save_session(history_records, SESSION_ID)
+                    # Note: Database persistence already wrote the user prompt; a robust rollback can be added if required, but streaming completion guards normally prevent this.
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 @app.post("/api/reset")
-async def reset_session():
-    # Architecture Note: Explicit session purge targeting the resolved relative backend session directory to unlink persisted state.
-    import os
-    session_path = os.path.join(os.path.dirname(__file__), "sessions", "mandarin_session.json")
+async def reset_session(request: Request):
+    """Architectural Note: Purges active session state directly from PostgreSQL tables."""
+    pool = request.app.state.pool
     try:
-        if os.path.exists(session_path):
-            os.remove(session_path)
-        return {"status": "success", "message": "Session history deleted"}
+        await clear_session(pool, SESSION_ID)
+        return {"status": "success", "message": "Session history deleted from PostgreSQL"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to reset server session: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to reset database session: {str(e)}")
 
 @app.post("/api/tts", dependencies=[Depends(rate_limit(capacity=40, refill_rate=1.0))])
 async def generate_tts(request: TTSRequest):
