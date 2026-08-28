@@ -54,7 +54,7 @@ SESSION_ID = "mandarin_session"
 
 # Architecture Note: Dynamic System Prompt generator scaling instructional language and pinyin density based on client proficiency, while strictly enforcing Markdown/AST routing constraints against English hallucination.
 def get_system_prompt(proficiency: str) -> str:
-# Architectural Note: Implemented Contrastive Prompting (WRONG/CORRECT) and explicit percentage ratios. LLMs map heavily to structural examples; negative constraints alone result in context drift and tag leakage.
+    # Architectural Note: Implemented Contrastive Prompting (WRONG/CORRECT) and explicit percentage ratios. LLMs map heavily to structural examples; negative constraints alone result in context drift and tag leakage.
     if "我知道" in proficiency:
         tone = "Explain concepts using a mix of 50% Taiwanese Mandarin and 50% English. Do not use 100% Mandarin."
     elif "Ordering Food" in proficiency:
@@ -70,14 +70,16 @@ You are a friendly, patient Taiwanese Mandarin language coach for adult expats.
 {tone}
 
 # CRITICAL HTML TAG RULES (SYSTEM WILL CRASH IF VIOLATED)
+# SURGICAL DIFF
 Rule 1: ALL Chinese characters MUST be wrapped in `<ruby>` tags character-by-character. (e.g., <ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby>)
 Rule 2: You MUST wrap EVERY instance of Chinese characters in an audio tag. NEVER leave `<ruby>` tags exposed in plain text.
-Rule 3: Use `<tts-inline>` for isolated words or phrases embedded in English sentences.
-Rule 4: Use `<tts-block>` for full dialogue lines or complete Mandarin sentences.
+Rule 3: Use `<tts-inline>` ONLY for isolated Chinese words embedded in English sentences.
+Rule 4: Use `<tts-block>` ONLY for full dialogue lines or complete Mandarin sentences.
+Rule 5: FATAL ERROR - NEVER wrap English text in `<tts-inline>` or `<tts-block>`. These tags are EXCLUSIVELY for Chinese characters.
 
 # FORMATTING EXAMPLES (FOLLOW EXACTLY)
-WRONG: We will practice taking the metro (<ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby>).
-CORRECT: We will practice taking the metro (<tts-inline><ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby></tts-inline>).
+WRONG: Welcome! <ruby>歡<rt>huān</rt></ruby><ruby>迎<rt>yíng</rt></ruby>! Today we practice <tts-inline>shopping</tts-inline>.
+CORRECT: Welcome! <tts-inline><ruby>歡<rt>huān</rt></ruby><ruby>迎<rt>yíng</rt></ruby></tts-inline>! Today we practice shopping.
 
 Dialogue:
 <tts-block>A: <ruby>請<rt>qǐng</rt></ruby><ruby>問<rt>wèn</rt></ruby>，<ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby><ruby>站<rt>zhàn</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>哪<rt>nǎ</rt></ruby>？</tts-block>
