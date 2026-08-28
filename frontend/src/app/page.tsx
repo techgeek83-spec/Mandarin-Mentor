@@ -625,23 +625,29 @@ const sendPayload = async (userPrompt: string) => {
                    components={msg.role === 'user' ? {} : {
                       // @ts-ignore - Architecture Note: Explicit custom HTML tag routing bypasses Markdown syntax collisions.
                       'tts-block': ({ children }: any) => {
-                        // Architecture Note: Recursively extracts purely the Hanzi text (stripping <rt> pinyin nodes) from the HTML AST to feed the TTS block-level payload.
+                        // Architecture Note: Robust recursive node extractor handling both React elements and primitive strings while strictly excluding <rt> pinyin annotation tags.
                         const extractHanzi = (nodes: React.ReactNode): string => {
                           let text = '';
                           React.Children.forEach(nodes, (node) => {
-                            if (typeof node === 'string') {
+                            if (typeof node === 'string' || typeof node === 'number') {
                               text += node;
-                            } else if (React.isValidElement(node) && node.type !== 'rt') {
-                              text += extractHanzi((node as React.ReactElement<any>).props.children as React.ReactNode);
+                            } else if (React.isValidElement(node)) {
+                              // Filter out ruby text annotations regardless of lowercase or JSX component naming
+                              const tag = typeof node.type === 'string' ? node.type.toLowerCase() : '';
+                              if (tag !== 'rt') {
+                                text += extractHanzi((node.props as any)?.children);
+                              }
+                            } else if (Array.isArray(node)) {
+                              text += extractHanzi(node);
                             }
                           });
                           return text;
                         };
                         
-                        // Architecture Note: Strips LLM whitespace and aggressively removes partial HTML tags (<ruby>, </rt>) that bleed into the string payload during active SSE streaming before the AST resolves.
+                        // Architecture Note: Strip non-CJK noise, unclosed HTML artifacts, and whitespace to guarantee clean TTS input payload.
                         const rawHanzi = extractHanzi(children)
                           .replace(/<[^>]*>?/gm, '')
-                          .replace(/\s+/g, '');
+                          .replace(/[^\u4e00-\u9fff\u3400-\u4dbf]/g, '');
 
                         return (
                           <TTSPlayer 
@@ -656,13 +662,19 @@ const sendPayload = async (userPrompt: string) => {
                       },
                       // @ts-ignore
                       'tts-inline': ({ children }: any) => {
+                        // Architecture Note: Inline recursive Hanzi extractor strictly ignoring <rt> nodes.
                         const extractHanzi = (nodes: React.ReactNode): string => {
                           let text = '';
                           React.Children.forEach(nodes, (node) => {
-                            if (typeof node === 'string') {
+                            if (typeof node === 'string' || typeof node === 'number') {
                               text += node;
-                            } else if (React.isValidElement(node) && node.type !== 'rt') {
-                              text += extractHanzi((node as React.ReactElement<any>).props.children as React.ReactNode);
+                            } else if (React.isValidElement(node)) {
+                              const tag = typeof node.type === 'string' ? node.type.toLowerCase() : '';
+                              if (tag !== 'rt') {
+                                text += extractHanzi((node.props as any)?.children);
+                              }
+                            } else if (Array.isArray(node)) {
+                              text += extractHanzi(node);
                             }
                           });
                           return text;
@@ -670,7 +682,7 @@ const sendPayload = async (userPrompt: string) => {
                       
                         const rawHanzi = extractHanzi(children)
                           .replace(/<[^>]*>?/gm, '')
-                          .replace(/\s+/g, '');
+                          .replace(/[^\u4e00-\u9fff\u3400-\u4dbf]/g, '');
                         
                         return (
                           <TTSPlayer
