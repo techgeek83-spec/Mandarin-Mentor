@@ -8,49 +8,16 @@
         "type": "tabs",
         "children": [
           {
-            "id": "c9b6e7bd05161108",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Mandarin mentor/CHANGELOG.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "CHANGELOG"
-            }
-          },
-          {
             "id": "157bbd1f010464a6",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Mandarin mentor/Development notes.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Development notes"
-            }
-          },
-          {
-            "id": "29fc3cd518092aa1",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Mandarin mentor/decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-007-ios-safari-webaudio-pcm-downsampler"
+              "title": "New tab"
             }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -128,7 +95,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Mandarin mentor/decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -147,7 +113,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Mandarin mentor/decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -219,6 +184,18 @@
   },
   "active": "8a9300bbe8c4db27",
   "lastOpenFiles": [
+    "progressive-web-app.md",
+    "Development notes.md",
+    "CHANGELOG.md",
+    "architecture-state.md",
+    "api-contracts.md",
+    "decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
+    "decisions/ADR-006-redis-token-bucket-rate-limiting.md",
+    "decisions/ADR-005-sse-buffering-and-audio-concurrency.md",
+    "decisions/ADR-004-alpha-runtime-target.md",
+    "decisions/ADR-003-pwa-alpha-deployment.md",
+    "decisions/ADR-002-stt-runtime.md",
+    "decisions/ADR-001-cjk-fonts.md",
     "Mandarin mentor/Development notes.md",
     "Mandarin mentor/decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
     "Mandarin mentor/progressive-web-app.md",
