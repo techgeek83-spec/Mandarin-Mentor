@@ -8,15 +8,17 @@ load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from rate_limiter import limiter, rate_limit
+from database import init_db_pool, close_db_pool
 
-# Architecture Note: Manage lifecycle events for Redis connection pool cleanly.
+# Architecture Note: Manage lifecycle events for Redis connection pool and asyncpg PostgreSQL pool cleanly. Binds the asyncpg connection pool to the ASGI application lifecycle to prevent connection leaks during worker reloads.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await limiter.init_redis()
+    app.state.pool = await init_db_pool()
     yield
+    await close_db_pool(app.state.pool)
     await limiter.close()
 
 from google import genai
