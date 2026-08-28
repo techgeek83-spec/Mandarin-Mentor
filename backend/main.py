@@ -145,10 +145,11 @@ async def get_session_history(request: Request):
     history = await load_session(pool, SESSION_ID)
     return {"messages": history if history else []}
 
-# Architecture Note: Streams raw token chunks over SSE without blocking server thread. Rate limiter removed to prevent TCP timeout.
+# Architecture Note: Streams raw token chunks over SSE without blocking server thread. Rate limiter stripped to prevent Redis TCP timeouts.
 @app.post("/api/chat")
 async def chat_stream(http_request: Request, request: ChatRequest):
     pool = http_request.app.state.pool
+
     async def event_stream():
         full_response = ""
         try:
@@ -170,20 +171,7 @@ async def chat_stream(http_request: Request, request: ChatRequest):
                 for msg in gemini_payload
             ]
 
-           # Architectural Note: Diagnostic bypass to isolate TTFB. Generates a dummy stream to rule out LLM API latency.
-            class DummyChunk:
-                def __init__(self, text):
-                    self.text = text
-
-            async def mock_gemini():
-                yield DummyChunk("<tts-block><ruby>測<rt>cè</rt></ruby><ruby>試<rt>shì</rt></ruby></tts-block>")
-                await asyncio.sleep(0.1)
-                yield DummyChunk(" Diagnostic bypass complete.")
-
-            response_stream = mock_gemini()
-            
-            """ 
-            # Temporarily comment out the real API call
+            # Architectural Note: Targeting gemini-flash-lite-latest (points to gemini-3.5-flash-lite) for optimal TTFB and token economy.
             response_stream = await client.aio.models.generate_content_stream(
                 model="gemini-flash-lite-latest", 
                 contents=contents,
@@ -192,7 +180,7 @@ async def chat_stream(http_request: Request, request: ChatRequest):
                     temperature=0.7
                 )
             )
-            """
+
             async for chunk in response_stream:
                 if chunk.text:
                     full_response += chunk.text
@@ -210,7 +198,7 @@ async def chat_stream(http_request: Request, request: ChatRequest):
             if full_response:
                 asyncio.create_task(save_message(pool, SESSION_ID, "assistant", full_response))
 
-    # Architectural Note: Explicit anti-buffering headers force Uvicorn and intermediate proxies to flush chunks immediately, restoring sub-second visual TTFB in the browser.
+    # Architectural Note: Explicit anti-buffering headers force Uvicorn and intermediate proxies to flush chunks immediately.
     return StreamingResponse(
         event_stream(), 
         media_type="text/event-stream",
