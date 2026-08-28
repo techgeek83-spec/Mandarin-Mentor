@@ -54,7 +54,8 @@ SESSION_ID = "mandarin_session"
 
 # Architecture Note: Dynamic System Prompt generator scaling instructional language and pinyin density based on client proficiency, while strictly enforcing Markdown/AST routing constraints against English hallucination.
 def get_system_prompt(proficiency: str) -> str:
-    # Architecture Note: Maps custom frontend UI capability strings directly to LLM instruction tone.
+# ==== SURGICAL DIFF
+    # Architecture Note: Reinstated the verbose AST-injection prompt. Hardened with strict XML-validation instructions to prevent unclosed tags from panicking the frontend ReactMarkdown renderer.
     if "我知道" in proficiency:
         tone = "Use primarily Taiwanese Mandarin for explanations, resorting to English only for complex nuance."
     elif "Ordering Food" in proficiency:
@@ -73,11 +74,9 @@ Never write conversational sentences in unannotated Chinese.
 # Phonetics & CJK Display (FATAL UI CRASH IF IGNORED)
 You MUST wrap ALL Traditional Chinese characters in standard HTML ruby tags with their corresponding pinyin.
 This strictly includes ALL grammatical particles and structural characters (e.g., 的, 了, 嗎, 在). Do not skip a single character.
-Format strictly as: <ruby>捷運<rt>jié yùn</rt></ruby>. 
+Format strictly character-by-character to prevent alignment errors: <ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby>. 
 NEVER output pinyin in parentheses following the characters.
-
-# EXHAUSTIVE PINYIN REQUIREMENT (FATAL UI CRASH IF IGNORED)
-You MUST wrap EVERY SINGLE Chinese character in `<ruby>` tags, no exceptions. Do not skip common grammar particles (like 的, 了, 在, 是). Format strictly as: <ruby>捷運<rt>jié yùn</rt></ruby>. NEVER output pinyin in parentheses.
+CRITICAL: Ensure every single HTML tag is perfectly closed. Unclosed tags will fatally crash the application.
 
 # Target Vocabulary & Audio Setup (STRICT DELIMITER CONSTRAINTS)
 1. INLINE AUDIO: When listing isolated vocabulary or short grammar points, you MUST wrap the Chinese text and its ruby tags in `<tts-inline>...</tts-inline>`.
@@ -86,11 +85,11 @@ You MUST wrap EVERY SINGLE Chinese character in `<ruby>` tags, no exceptions. Do
 
 REQUIRED FORMAT PATTERN:
 Dialogue:
-<tts-block>A: <ruby>請<rt>qǐng</rt></ruby><ruby>問<rt>wèn</rt></ruby>，<ruby>捷運<rt>jié yùn</rt></ruby><ruby>站<rt>zhàn</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>哪<rt>nǎ</rt></ruby>？</tts-block>
+<tts-block>A: <ruby>請<rt>qǐng</rt></ruby><ruby>問<rt>wèn</rt></ruby>，<ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby><ruby>站<rt>zhàn</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>哪<rt>nǎ</rt></ruby>？</tts-block>
 <tts-block>B: <ruby>就<rt>jiù</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>前<rt>qián</rt></ruby><ruby>面<rt>miàn</rt></ruby>。</tts-block>
 
 Vocabulary Breakdown:
-* <tts-inline><ruby>捷運<rt>jié yùn</rt></ruby></tts-inline> - MRT / subway
+* <tts-inline><ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby></tts-inline> - MRT / subway
 * <tts-inline><ruby>前<rt>qián</rt></ruby><ruby>面<rt>miàn</rt></ruby></tts-inline> - Ahead / in front
 """
 
