@@ -699,7 +699,10 @@ const sendPayload = async (userPrompt: string) => {
                   ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
                 }}
               >
-                {msg.role === 'assistant' ? sanitizePinyinLeak(msg.content) : msg.content}
+                {/* Architecture Note: Dynamic regex fallback. If the LLM leaks naked <ruby> tags without a <tts-> wrapper, this forces them into an inline audio pill before AST parsing to prevent UI breakage. */}
+                {msg.role === 'assistant' 
+                  ? sanitizePinyinLeak(msg.content).replace(/(?<!<tts-(?:inline|block)>)((?:<ruby>.*?<\/ruby>)+)(?!<\/tts-(?:inline|block)>)/g, '<tts-inline>$1</tts-inline>') 
+                  : msg.content}
               </ReactMarkdown>
             </div>
             </div>
