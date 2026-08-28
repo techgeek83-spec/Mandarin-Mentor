@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.1.4](///compare/v0.1.3...v0.1.4) (2026-08-28)
+
+### Features
+
+* **db:** integrate asyncpg connection pool into fastAPI asgi lifespan 860ec0d
+
+### Bug Fixes
+
+* **api:** restore missing StreamingResponse import for SSE chat endpoint 71feefd
+* **db:** add connection string validation to prevent obscure driver crashes 23eb8da
+* **db:** configure asyncpg ssl requirement and disable statement cache for supabase pooler e93be4b
+* **db:** resolve syntax and indentation errors in database pool initializer 96ae1a3
 ## [0.1.3](///compare/v0.1.2...v0.1.3) (2026-08-28)
 ## [0.1.2](///compare/v0.1.1...v0.1.2) (2026-08-28)
 

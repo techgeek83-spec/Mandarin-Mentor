@@ -15,3 +15,6 @@ backend/__pycache__/
 # Local Storage & Sessions
 backend/sessions/
 *.json.bak
+.env
+backend/.env
+
