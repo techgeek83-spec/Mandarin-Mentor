@@ -236,23 +236,25 @@ export function SettingsDrawer({
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Purge Audio
                 </button>
-                {/* Architecture Note: Executes asynchronous backend session purge before flushing client storage and triggering page reload. */}
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (confirm('Reset current chat session and start over?')) {
-                      try {
-                       // Purge active session state across PostgreSQL via backend API route
-                        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-                        const res = await fetch(`${apiBase}/api/reset`, { 
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-                        window.location.reload();
-                      } catch (err) {
-                        console.error('Failed to unlink backend session file:', err);
-                      } finally {
+                {/* Architecture Note: Executes asynchronous backend session purge before flushing client storage and triggering full hard reload */}
+            <button
+              type="button"
+              onClick={async () => {
+                if (confirm('Reset current chat session and start over?')) {
+                  try {
+                    // Purge active session state across PostgreSQL via backend API route
+                    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+                    const sid = localStorage.getItem('sessionId') || '';
+                    const res = await fetch(`${apiBase}/api/reset`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ session_id: sid })
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+                    window.location.reload();
+                  } catch (err) {
+                    console.error('Failed to unlink backend session file:', err);
+                  } finally {
                         localStorage.clear();
                         sessionStorage.clear();
                         window.location.reload();

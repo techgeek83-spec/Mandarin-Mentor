@@ -133,7 +133,8 @@ const sanitizePinyinLeak = (content: string): string => {
 const pinyinDictCache = new Map<string, string[]>();
 
 // Architecture Note: Factory function generating a recursive AST interceptor. Extracted from the component render cycle to prevent redefining the recursive traversal on every re-render. Injects dynamic user settings (voice, rate) via closure to avoid prop-drilling through nested React nodes.
-const createNodeHydrator = (settings: any) => {
+// Supports 'inline' (vocabulary pills) and 'text-only' (hydrates ruby pinyin without embedding inline play buttons, for use inside block players).
+const createNodeHydrator = (settings: any, renderTTS: boolean = true) => {
   const hydrateNode = (n: React.ReactNode): React.ReactNode => {
     if (typeof n === 'string') {
       // Architecture Note: Regex explicitly omits \s. Capturing whitespace shreds English text into thousands of DOM nodes on every space, triggering catastrophic React render bottlenecks during SSE streaming.
@@ -150,6 +151,16 @@ const createNodeHydrator = (settings: any) => {
             pinyinDictCache.set(part, pinyinArray);
           }
           
+          const rubyContent = part.split('').map((char, i) => (
+            /[\u4e00-\u9fff]/.test(char)
+              ? <ruby key={i}>{char}<rt>{pinyinArray[i]}</rt></ruby>
+              : <span key={i} className="mx-[0.05em]">{char}</span>
+          ));
+
+          if (!renderTTS) {
+            return <span key={`ruby-${idx}`}>{rubyContent}</span>;
+          }
+
           return (
             <TTSPlayer 
               key={`tts-${idx}`}
@@ -158,12 +169,7 @@ const createNodeHydrator = (settings: any) => {
               rate={settings.playbackRate}
               mode="inline"
             >
-              {/* Architecture Note: Selectively renders <ruby> tags only for valid Hanzi. Prevents punctuation marks from displaying redundant pinyin annotations above themselves. */}
-              {part.split('').map((char, i) => (
-                /[\u4e00-\u9fff]/.test(char)
-                  ? <ruby key={i}>{char}<rt>{pinyinArray[i]}</rt></ruby>
-                  : <span key={i} className="mx-[0.05em]">{char}</span>
-              ))}
+              {rubyContent}
             </TTSPlayer>
           );
         }
@@ -720,7 +726,30 @@ const sendPayload = async (userPrompt: string) => {
                       li: ({ node, children, ...props }) => <li {...props}>{React.Children.map(children, createNodeHydrator(settings))}</li>,
                       ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
                       ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
-                      blockquote: ({ node, children, ...props }) => <blockquote className="border-l-4 border-slate-500 pl-4 my-4 italic" {...props}>{React.Children.map(children, createNodeHydrator(settings))}</blockquote>
+                      blockquote: ({ node, children, ...props }) => {
+                        // Architecture Note: Recursive text extractor to obtain the pure Hanzi string for block-level edge-tts synthesis.
+                        const extractText = (n: React.ReactNode): string => {
+                          let text = '';
+                          React.Children.forEach(n, (child) => {
+                            if (typeof child === 'string' || typeof child === 'number') text += child;
+                            else if (React.isValidElement(child)) text += extractText((child.props as any)?.children);
+                            else if (Array.isArray(child)) text += extractText(child);
+                          });
+                          return text;
+                        };
+                        const fullText = extractText(children).replace(/[^\u4e00-\u9fff\u3000-\u303F\uFF00-\uFFEF]/g, '');
+
+                        return (
+                          <TTSPlayer
+                            text={fullText}
+                            voice={settings.voice}
+                            rate={settings.playbackRate}
+                            mode="block"
+                          >
+                            {React.Children.map(children, createNodeHydrator(settings, false))}
+                          </TTSPlayer>
+                        );
+                      }
                    }}
                  >
                    {/* Architecture Note: LLM now outputs pure Markdown. Regex pre-processing is stripped. */}
