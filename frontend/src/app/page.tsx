@@ -750,21 +750,45 @@ const sendPayload = async (userPrompt: string) => {
                           pinyinDictCache.set(rawText, pinyinArray);
                         }
 
-                        // Architecture Note: Renders the block TTSPlayer directly without an outer <blockquote> border wrapper, eliminating double-border artifacts.
+                        // Architecture Note: Splits multi-line blockquotes into distinct block-level audio cards. 
+                        // Prevents multi-turn dialogues and adjacent English translation notes from collapsing into a single audio instance.
+                        const lines = rawText.split('\n').filter((line) => line.trim().length > 0);
+
                         return (
-                          <div className="my-3">
-                            <TTSPlayer
-                              text={ttsPayload}
-                              voice={settings.voice}
-                              rate={settings.playbackRate}
-                              mode="block"
-                            >
-                              {rawText.split('').map((char, i) => (
-                                /[\u4e00-\u9fff]/.test(char)
-                                  ? <ruby key={i}>{char}<rt>{pinyinArray[i]}</rt></ruby>
-                                  : <span key={i} className="mx-[0.05em] whitespace-pre-wrap">{char}</span>
-                              ))}
-                            </TTSPlayer>
+                          <div className="my-3 space-y-2">
+                            {lines.map((line, lineIdx) => {
+                              const lineTTS = line.replace(/[^\u4e00-\u9fff\u3000-\u303F\uFF00-\uFFEF]/g, '');
+                              let linePinyin = pinyinDictCache.get(line);
+                              if (!linePinyin) {
+                                linePinyin = pinyin(line, { type: 'array' });
+                                pinyinDictCache.set(line, linePinyin);
+                              }
+
+                              // Non-CJK lines (e.g. standalone English translations inside quotes) render as plain text without TTS wrappers
+                              if (!/[\u4e00-\u9fff]/.test(line)) {
+                                return (
+                                  <p key={`quote-line-${lineIdx}`} className="text-sm text-ink-muted pl-4 italic">
+                                    {line}
+                                  </p>
+                                );
+                              }
+
+                              return (
+                                <TTSPlayer
+                                  key={`quote-line-${lineIdx}`}
+                                  text={lineTTS}
+                                  voice={settings.voice}
+                                  rate={settings.playbackRate}
+                                  mode="block"
+                                >
+                                  {line.split('').map((char, i) => (
+                                    /[\u4e00-\u9fff]/.test(char)
+                                      ? <ruby key={i}>{char}<rt>{linePinyin[i]}</rt></ruby>
+                                      : <span key={i} className="mx-[0.05em] whitespace-pre-wrap">{char}</span>
+                                  ))}
+                                </TTSPlayer>
+                              );
+                            })}
                           </div>
                         );
                       }
