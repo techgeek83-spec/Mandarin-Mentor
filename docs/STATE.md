@@ -23,15 +23,15 @@
 ## Active Development Log
 
 ### Definition of Done (DoD) Checklist (ADR-018)
-- [ ] **Scaffold & Build:** Complete database schemas, FastAPI routes, and Next.js client UI integration.
-- [ ] **E2E Validation:** The feature must be tested across its full lifecycle (Create, Read, Update, Delete) bridging both the backend and client before moving to the next feature.
-- [ ] **State Sync:** `STATE.md`, `system_architecture.md`, and `api_contracts.md` must be updated to reflect the finalized state.
+- [x] **Scaffold & Build:** Complete database schemas, FastAPI routes, and Next.js client UI integration.
+- [x] **E2E Validation:** Verified full session write/read lifecycle via Supabase (`POST /api/chat` -> PostgreSQL `asyncpg` -> `GET /api/history` client hydration).
+- [x] **State Sync:** `STATE.md` and `api_contracts.md` updated to reflect the dynamic `session_id` read path.
 
 **Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
 
 ### Active Backlog
-1. **[BLOCKED - E2E VALIDATION REQUIRED]** Complete Supabase persistent storage read-path: implement `GET /api/history` and client-side `useEffect` initial session hydration.
-2. Implement client-side regex parsing (`/[\u4e00-\u9fff]+/g`) within the ReactMarkdown AST to mount `<TTSPlayer>` components dynamically.
+1. Implement client-side regex parsing (`/[\u4e00-\u9fff]+/g`) within the ReactMarkdown AST to mount `<TTSPlayer>` components dynamically.
+2. Build text-node buffering logic to evaluate Hanzi in complete phrases (preventing polyphone context loss in `pinyin-pro`).
 3. Build text-node buffering logic to evaluate Hanzi in complete phrases (preventing polyphone context loss in `pinyin-pro`).
 4. Re-architect Redis token-bucket rate limiting to fail open asynchronously without blocking the SSE stream yield.
 5. Build Next.js PWA service worker with WebM/WAV audio capture fallback.

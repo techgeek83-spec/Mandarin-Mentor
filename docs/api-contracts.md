@@ -18,14 +18,19 @@
 - **Protocol:** Server-Sent Events (`text/event-stream`).
     
 - **Request Payload:**
+    
+
+JSON
+
 ```json
 {
-  "messages": [
-    { "role": "user" | "assistant", "content": "string" }
-  ],
-  "session_id": "string"
+  "prompt": "string",
+  "level": "string",
+  "session_id": "string" // Dynamic client-generated UUID for transactional PostgreSQL persistence
 }
 ```
+
+
 - **Payload Output Rules (ADR-016):**
     
     - The LLM outputs pure conversational text and standard Markdown.
@@ -61,13 +66,20 @@ JSON
 - **Status Codes:** `200 OK`, `502 Bad Gateway` (Upstream TTS provider offline).
 
 **4. Session History Endpoint (`GET /api/history`)**
+
 - **Protocol:** HTTP GET
-- **Query Parameters:** `?session_id=string`
+    
+- **Query Parameters:** `session_id=string` (Dynamic UUID)
+    
 - **Response:**
-```json
+    
+
+JSON
+
+```
 {
   "messages": [
-    { "role": "user" | "assistant", "content": "string", "timestamp": "ISO-8601" }
+    { "role": "user" | "assistant", "content": "string" }
   ]
 }
 ```
