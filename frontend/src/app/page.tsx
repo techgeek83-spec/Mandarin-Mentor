@@ -62,7 +62,9 @@ const TTSPlayer = ({
       // Architecture Note: Normalizes UI numeric speed selections into edge-tts compatible percentage strings to prevent 500 backend fetch failures.
       const normalizedRate = (String(rate) === '1' || String(rate) === '1.0') ? '+0%' : rate;
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tts`, {
+      // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into the client bundle
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const res = await fetch(`${apiBase}/api/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: cleanText, voice, rate: normalizedRate }),
@@ -194,7 +196,9 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
       const formData = new FormData();
       formData.append('file', blob, filename);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/transcribe`, {
+      // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into client bundle
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const res = await fetch(`${apiBase}/api/transcribe`, {
         method: 'POST',
         body: formData,
       });
@@ -285,7 +289,9 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
       // Finalize and encode PCM buffer for iOS Fallback
       processorRef.current.disconnect();
       processorRef.current = null;
-      await audioContextRef.current.close();
+      if (audioContextRef.current.state !== 'closed') {
+        await audioContextRef.current.close();
+      }
       audioContextRef.current = null;
       
       setIsRecording(false);
@@ -307,6 +313,16 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
         mediaStreamRef.current.getTracks().forEach((track) => track.stop());
         mediaStreamRef.current = null;
       }
+      setIsRecording(false);
+    }
+  };
+
+  // Architectural Note: Explicit toggle handler ensuring complete audio track disposal between session cycles.
+  const handleToggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
     }
   };
   
@@ -343,13 +359,17 @@ const sendPayload = async (userPrompt: string) => {
 
   try {
     // Architecture Note: Pipes client proficiency state into the POST payload to drive backend dynamic prompt scaffolding. Defaults to Beginner if state is uninitialized.
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: userPrompt, level: selectedLevel || "Level 1 (Beginner)" })
-    });
+    // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into the client bundle
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const res = await fetch(`${apiBase}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userPrompt, level: selectedLevel || "Level 1 (Beginner)" })
+      });
 
-    if (!res.body) throw new Error('No response body');
+    // Architectural Note: Ensure HTTP errors (4xx/500) fail fast before attaching ReadableStream reader
+      if (!res.ok) throw new Error(`Chat request failed with status ${res.status}: ${res.statusText}`);
+      if (!res.body) throw new Error('No response body');
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -716,7 +736,8 @@ const sendPayload = async (userPrompt: string) => {
       </main>
 
       {/* Persistent Chat Input */}
-      <div className="p-4 bg-surface-bubble/95 backdrop-blur-md border-t border-border-subtle shadow-lg">
+      {/* Architectural Note: Elevate z-index to z-40 and apply safe-area bottom padding to bypass mobile viewport obstruction */}
+      <div className="relative z-40 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-surface-bubble/95 backdrop-blur-md border-t border-border-subtle shadow-lg">
         <form onSubmit={handleSubmit} className="flex gap-2 items-center w-full">
           <div className="relative flex items-center justify-center">
             {isRecording && (
@@ -724,27 +745,11 @@ const sendPayload = async (userPrompt: string) => {
             )}
             <button
               type="button"
-              onMouseDown={startRecording}
-              onMouseUp={stopRecording}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                  navigator.vibrate(50);
-                }
-                startRecording();
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                  navigator.vibrate([30, 50, 30]);
-                }
-                stopRecording();
-              }}
-              onContextMenu={(e) => e.preventDefault()}
+              onClick={handleToggleRecording}
               disabled={isTranscribing || !onboardingComplete}
-              title="Hold to speak"
-              aria-label="Hold to speak"
-              className={`relative p-3 rounded-full transition-all select-none touch-none cursor-pointer ${
+              title={isRecording ? "Tap to stop" : "Tap to speak"}
+              aria-label={isRecording ? "Tap to stop" : "Tap to speak"}
+              className={`relative p-3 rounded-full transition-all select-none cursor-pointer ${
                 isRecording
                   ? 'bg-coral text-white animate-pulse ring-4 ring-coral/30 ring-offset-1'
                   : 'bg-surface-app hover:bg-border-subtle/50 text-ink'

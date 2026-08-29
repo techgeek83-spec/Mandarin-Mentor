@@ -242,7 +242,14 @@ export function SettingsDrawer({
                   onClick={async () => {
                     if (confirm('Reset current chat session and start over?')) {
                       try {
-                        await fetch('http://localhost:8000/api/reset', { method: 'POST' });
+                       // Purge active session state across PostgreSQL via backend API route
+                        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+                        const res = await fetch(`${apiBase}/api/reset`, { 
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+                        window.location.reload();
                       } catch (err) {
                         console.error('Failed to unlink backend session file:', err);
                       } finally {

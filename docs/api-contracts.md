@@ -10,12 +10,14 @@
 }
 ````
 
-- **Status Codes:** `200 OK`, `429 Too Many Requests` (Redis Token Bucket), `500 Internal Server Error` (Groq failure).
+- - **Status Codes:** `200 OK`, `500 Internal Server Error`. _(Note: `429 Too Many Requests` currently disabled per ADR-017)._
     
-2. Chat Streaming Endpoint (`POST /api/chat`)
 
-* **Protocol:** Server-Sent Events (`text/event-stream`).
-* **Request Payload:**
+**2. Chat Streaming Endpoint (`POST /api/chat`)**
+
+- **Protocol:** Server-Sent Events (`text/event-stream`).
+    
+- **Request Payload:**
 ```json
 {
   "messages": [
@@ -24,20 +26,19 @@
   "session_id": "string"
 }
 ```
-- **Payload Output Rules:**
+- **Payload Output Rules (ADR-016):**
     
-    - All Hanzi MUST be wrapped in explicit `<ruby>漢字<rt>pīnyīn</rt></ruby>` tags.
+    - The LLM outputs pure conversational text and standard Markdown.
         
-    - Audio triggers MUST be formatted as `<tts-inline text="漢字">` or `<tts-block text="漢字">`.
+    - **NO HTML TAGS ALLOWED.** The API will no longer emit `<ruby>`, `<rt>`, `<tts-inline>`, or `<tts-block>` wrappers.
         
-- **Client-Side SSE Chunk Aggregation & HTML Tag Boundary Invariants:**
+- **Client-Side SSE Chunk Aggregation & Hydration Invariants:**
     
-    - **Tag Split Buffer:** LLM token chunks can split across `<ruby>`, `<rt>`, or `<tts-inline>` boundaries (e.g., Chunk 1: `<tts-in`, Chunk 2: `line text="你好">`).
+    - **Text Buffer Wait-State:** The client streaming consumer must buffer partial string chunks until a natural sentence or punctuation boundary is met.
         
-    - **Parser Sanitization:** The client streaming consumer must buffer partial tag matches matching `/<\/?(?:ruby|rt|rp|tts-inline|tts-block)?[^>]*$/` before feeding the string to `ReactMarkdown`.
+    - **Contextual Hydration:** Complete phrases are required before execution of `pinyin-pro` dictionary lookups to prevent polyphone (多音字) mismatch.
         
-    - **Render State:** Incomplete tags must NOT be evaluated by the markdown AST parser mid-stream to prevent raw HTML string flashing and broken DOM tree re-renders.
-    - 
+
 **3. Synthesize Audio Endpoint (`POST /api/tts`)**
 
 - **Request:**
@@ -46,12 +47,45 @@
 JSON
 
 ```
-{
+{{
   "text": "string", // Pure Hanzi string extracted via client-side regex
   "voice": "zh-TW-HsiaoChenNeural" // Default fallback
+}
 }
 ```
 
 - **Response:** JSON payload containing base64 encoded audio: `{"audio": "base64_encoded_string"}`
+    
 - **Resilience:** Automatic fallback to `zh-TW-HsiaoYuNeural` on primary upstream WebSocket failure (502).
-- **Status Codes:** `200 OK`, `429 Too Many Requests`, `502 Bad Gateway` (Upstream TTS provider offline).
+    
+- **Status Codes:** `200 OK`, `502 Bad Gateway` (Upstream TTS provider offline).
+
+**4. Session History Endpoint (`GET /api/history`)**
+- **Protocol:** HTTP GET
+- **Query Parameters:** `?session_id=string`
+- **Response:**
+```json
+{
+  "messages": [
+    { "role": "user" | "assistant", "content": "string", "timestamp": "ISO-8601" }
+  ]
+}
+```
+
+**Status Codes:** `200 OK`, `404 Not Found` (Session missing), `500 Internal Server Error`.
+
+````
+
+```bash
+git commit -am "docs(architecture): enforce ADR-018 DoD protocol and append missing GET /api/history contract"
+````
+
+**[STATE SYNC REQUIRED]** Update `STATE.md`, `system_architecture.md`, and `api_contracts.md` to reflect these changes before starting a new task.
+
+### E2E VALIDATION PAUSE
+
+Execution halted. To resolve the active backlog blocker and finalize the Supabase E2E integration, provide the following **Context Snapshots**:
+
+1. **FastAPI Backend:** The `asyncpg` query function and router definition for `GET /api/history` (or state "No GET route exists").
+    
+2. **Next.js Client:** The top 20-30 lines of `src/app/page.tsx` showing `useState`, `session_id` logic, and any mount `useEffect`.

@@ -9,7 +9,8 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Architectural Note: Disable Next.js dev indicators to prevent mobile touch event interception on fixed viewport footers
+  devIndicators: false,
 };
 
 export default withSerwist(nextConfig);
