@@ -134,11 +134,12 @@ async def transcribe_audio(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
     
-@app.get("/api/chat")
-async def get_session_history(request: Request):
-    """Authoritative read-only hydration endpoint backed by PostgreSQL."""
+@app.get("/api/history")
+async def get_session_history(request: Request, session_id: str):
+    """Authoritative read-only hydration endpoint backed by PostgreSQL. Implements E2E read-path."""
     pool = request.app.state.pool
-    history = await load_session(pool, SESSION_ID)
+    # Architecture Note: Hydrates session using the client-provided session_id to prevent cross-user state corruption.
+    history = await load_session(pool, session_id)
     return {"messages": history if history else []}
 
 # Architecture Note: Streams raw token chunks over SSE without blocking server thread. Rate limiter stripped to prevent Redis TCP timeouts.

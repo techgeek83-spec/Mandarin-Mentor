@@ -74,12 +74,6 @@ JSON
 
 **Status Codes:** `200 OK`, `404 Not Found` (Session missing), `500 Internal Server Error`.
 
-````
-
-```bash
-git commit -am "docs(architecture): enforce ADR-018 DoD protocol and append missing GET /api/history contract"
-````
-
 **[STATE SYNC REQUIRED]** Update `STATE.md`, `system_architecture.md`, and `api_contracts.md` to reflect these changes before starting a new task.
 
 ### E2E VALIDATION PAUSE

@@ -359,6 +359,7 @@
   },
   "active": "52109c4e43c59671",
   "lastOpenFiles": [
+    "decisions/ADR-018-definition-of-done.md",
     "STATE.md",
     "ADR-018-definition-of-done.md",
     "Development notes.md",
@@ -384,7 +385,6 @@
     "decisions/ADR-005-sse-buffering-and-audio-concurrency.md",
     "decisions/ADR-006-redis-token-bucket-rate-limiting.md",
     "Mandarin mentor/decisions/ADR-007-ios-safari-webaudio-pcm-downsampler.md",
-    "progressive-web-app.md",
     "decisions",
     "Mandarin mentor/decisions",
     "Mandarin mentor"
