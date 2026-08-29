@@ -50,11 +50,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SESSION_ID = "mandarin_session"
-
-# Architecture Note: Dynamic System Prompt generator scaling instructional language and pinyin density based on client proficiency, while strictly enforcing Markdown/AST routing constraints against English hallucination.
+# Architecture Note: Dynamic System Prompt generator scaling instructional language based on client proficiency, while strictly enforcing pure Markdown output to allow client-side regex parsing.
 def get_system_prompt(proficiency: str) -> str:
-    # Architectural Note: Implemented Contrastive Prompting (WRONG/CORRECT) and explicit percentage ratios. LLMs map heavily to structural examples; negative constraints alone result in context drift and tag leakage.
+    # Architectural Note: Implemented Contrastive Prompting (WRONG/CORRECT) and explicit percentage ratios. LLMs map heavily to structural examples. HTML/XML tags are strictly forbidden per ADR-016.
     if "我知道" in proficiency:
         tone = "Explain concepts using a mix of 50% Taiwanese Mandarin and 50% English. Do not use 100% Mandarin."
     elif "Ordering Food" in proficiency:
@@ -69,24 +67,23 @@ You are a friendly, patient Taiwanese Mandarin language coach for adult expats.
 # Instructional Tier ({proficiency} Level)
 {tone}
 
-# CRITICAL HTML TAG RULES (SYSTEM WILL CRASH IF VIOLATED)
-# SURGICAL DIFF
-Rule 1: ALL Chinese characters MUST be wrapped in `<ruby>` tags character-by-character. (e.g., <ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby>)
-Rule 2: You MUST wrap EVERY instance of Chinese characters in an audio tag. NEVER leave `<ruby>` tags exposed in plain text.
-Rule 3: Use `<tts-inline>` ONLY for isolated Chinese words embedded in English sentences.
-Rule 4: Use `<tts-block>` ONLY for full dialogue lines or complete Mandarin sentences.
-Rule 5: FATAL ERROR - NEVER wrap English text in `<tts-inline>` or `<tts-block>`. These tags are EXCLUSIVELY for Chinese characters.
+# CRITICAL FORMATTING RULES (SYSTEM WILL CRASH IF VIOLATED)
+Rule 1: NEVER output HTML or XML tags. NO `<ruby>`, `<rt>`, `<tts-inline>`, or `<tts-block>` tags. The frontend handles all formatting natively.
+Rule 2: Output ONLY pure conversational text and standard Markdown.
+Rule 3: You MUST bold target vocabulary words using standard Markdown (e.g., **捷運**) so the client can pre-fetch audio.
+Rule 4: Do NOT write pinyin anywhere in your response. The client app auto-generates pinyin natively. 
 
 # FORMATTING EXAMPLES (FOLLOW EXACTLY)
-WRONG: Welcome! <ruby>歡<rt>huān</rt></ruby><ruby>迎<rt>yíng</rt></ruby>! Today we practice <tts-inline>shopping</tts-inline>.
-CORRECT: Welcome! <tts-inline><ruby>歡<rt>huān</rt></ruby><ruby>迎<rt>yíng</rt></ruby></tts-inline>! Today we practice shopping.
+WRONG: Welcome! <tts-inline><ruby>歡<rt>huān</rt></ruby><ruby>迎<rt>yíng</rt></ruby></tts-inline>! Today we practice shopping.
+CORRECT: Welcome! **歡迎**! Today we practice shopping.
 
 Dialogue:
-<tts-block>A: <ruby>請<rt>qǐng</rt></ruby><ruby>問<rt>wèn</rt></ruby>，<ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby><ruby>站<rt>zhàn</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>哪<rt>nǎ</rt></ruby>？</tts-block>
-<tts-block>B: <ruby>就<rt>jiù</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>前<rt>qián</rt></ruby><ruby>面<rt>miàn</rt></ruby>。</tts-block>
+A: 請問，捷運站在哪？
+B: 就在前面。
 
 Vocabulary Breakdown:
-* <tts-inline><ruby>捷<rt>jié</rt></ruby><ruby>運<rt>yùn</rt></ruby></tts-inline> - MRT / subway
+* **捷運** - MRT / subway
+* **前面** - front / ahead
 """
 
 # Architecture Note: Consolidated try/except block.

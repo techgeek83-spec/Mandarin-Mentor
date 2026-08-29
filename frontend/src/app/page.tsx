@@ -132,11 +132,13 @@ const sanitizePinyinLeak = (content: string): string => {
 const createNodeHydrator = (settings: any) => {
   const hydrateNode = (n: React.ReactNode): React.ReactNode => {
     if (typeof n === 'string') {
-      const parts = n.split(/([\u4e00-\u9fff]+)/g);
-      if (parts.length === 1) return n; 
+      // Architecture Note: Regex explicitly omits \s. Capturing whitespace shreds English text into thousands of DOM nodes on every space, triggering catastrophic React render bottlenecks during SSE streaming.
+      const parts = n.split(/([\u4e00-\u9fff\u3000-\u303F\uFF00-\uFFEF]+)/g);
+      if (parts.length === 1) return n;
       
       return parts.map((part, idx) => {
-        if (/^[\u4e00-\u9fff]+$/.test(part)) {
+        // Architecture Note: Loosened test to ensure the block contains AT LEAST one Hanzi, preventing pure whitespace/punctuation nodes from triggering edge-tts.
+        if (/[\u4e00-\u9fff]/.test(part)) {
           // Dynamic pinyin hydration strictly relies on the upstream SSE text buffer completing phrases before rendering.
           const pinyinArray = pinyin(part, { type: 'array' });
           return (
@@ -147,8 +149,11 @@ const createNodeHydrator = (settings: any) => {
               rate={settings.playbackRate}
               mode="inline"
             >
+              {/* Architecture Note: Selectively renders <ruby> tags only for valid Hanzi. Prevents punctuation marks from displaying redundant pinyin annotations above themselves. */}
               {part.split('').map((char, i) => (
-                <ruby key={i}>{char}<rt>{pinyinArray[i]}</rt></ruby>
+                /[\u4e00-\u9fff]/.test(char)
+                  ? <ruby key={i}>{char}<rt>{pinyinArray[i]}</rt></ruby>
+                  : <span key={i} className="mx-[0.05em]">{char}</span>
               ))}
             </TTSPlayer>
           );
