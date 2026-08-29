@@ -128,8 +128,47 @@ const sanitizePinyinLeak = (content: string): string => {
   return content.replace(/(\*\*[\u4e00-\u9fff]+\*\*)\s*\([a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s]+\)/g, '$1');
 };
 
+// Architecture Note: Factory function generating a recursive AST interceptor. Extracted from the component render cycle to prevent redefining the recursive traversal on every re-render. Injects dynamic user settings (voice, rate) via closure to avoid prop-drilling through nested React nodes.
+const createNodeHydrator = (settings: any) => {
+  const hydrateNode = (n: React.ReactNode): React.ReactNode => {
+    if (typeof n === 'string') {
+      const parts = n.split(/([\u4e00-\u9fff]+)/g);
+      if (parts.length === 1) return n; 
+      
+      return parts.map((part, idx) => {
+        if (/^[\u4e00-\u9fff]+$/.test(part)) {
+          // Dynamic pinyin hydration strictly relies on the upstream SSE text buffer completing phrases before rendering.
+          const pinyinArray = pinyin(part, { type: 'array' });
+          return (
+            <TTSPlayer 
+              key={`tts-${idx}`}
+              text={part} 
+              voice={settings.voice} 
+              rate={settings.playbackRate}
+              mode="inline"
+            >
+              {part.split('').map((char, i) => (
+                <ruby key={i}>{char}<rt>{pinyinArray[i]}</rt></ruby>
+              ))}
+            </TTSPlayer>
+          );
+        }
+        return <span key={`text-${idx}`}>{part}</span>;
+      });
+    }
+    
+    if (React.isValidElement(n)) {
+      return React.cloneElement(n, n.props, React.Children.map((n.props as any).children, hydrateNode));
+    }
+    if (Array.isArray(n)) return React.Children.map(n, hydrateNode);
+    return n;
+  };
+  return hydrateNode;
+};
+
 export default function Chat() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+>>>> SUCCEEDING
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -658,91 +697,16 @@ const sendPayload = async (userPrompt: string) => {
                    rehypePlugins={[rehypeRaw]}
                    // Architecture Note: Bypasses the AST TTS parser entirely for user messages to prevent UI collisions and STT execution against unsanitized client prompts.
                    components={msg.role === 'user' ? {} : {
-                      // @ts-ignore - Architecture Note: Explicit custom HTML tag routing bypasses Markdown syntax collisions.
-                      'tts-block': ({ children }: any) => {
-                        // Architecture Note: Robust recursive node extractor handling both React elements and primitive strings while strictly excluding <rt> pinyin annotation tags.
-                        const extractHanzi = (nodes: React.ReactNode): string => {
-                          let text = '';
-                          React.Children.forEach(nodes, (node) => {
-                            if (typeof node === 'string' || typeof node === 'number') {
-                              text += node;
-                            } else if (React.isValidElement(node)) {
-                              // Filter out ruby text annotations regardless of lowercase or JSX component naming
-                              const tag = typeof node.type === 'string' ? node.type.toLowerCase() : '';
-                              if (tag !== 'rt') {
-                                text += extractHanzi((node.props as any)?.children);
-                              }
-                            } else if (Array.isArray(node)) {
-                              text += extractHanzi(node);
-                            }
-                          });
-                          return text;
-                        };
-                        
-                        // Architecture Note: Strip non-CJK noise, unclosed HTML artifacts, and whitespace to guarantee clean TTS input payload.
-                        const rawHanzi = extractHanzi(children)
-                          .replace(/<[^>]*>?/gm, '')
-                          .replace(/[^\u4e00-\u9fff\u3400-\u4dbf]/g, '');
-
-                        return (
-                          <TTSPlayer 
-                            text={rawHanzi} 
-                            voice={settings.voice} 
-                            rate={settings.playbackRate}
-                            mode="block"
-                          >
-                            {children}
-                          </TTSPlayer>
-                        );
-                      },
-                      // @ts-ignore
-                      'tts-inline': ({ children }: any) => {
-                        // Architecture Note: Inline recursive Hanzi extractor strictly ignoring <rt> nodes.
-                        const extractHanzi = (nodes: React.ReactNode): string => {
-                          let text = '';
-                          React.Children.forEach(nodes, (node) => {
-                            if (typeof node === 'string' || typeof node === 'number') {
-                              text += node;
-                            } else if (React.isValidElement(node)) {
-                              const tag = typeof node.type === 'string' ? node.type.toLowerCase() : '';
-                              if (tag !== 'rt') {
-                                text += extractHanzi((node.props as any)?.children);
-                              }
-                            } else if (Array.isArray(node)) {
-                              text += extractHanzi(node);
-                            }
-                          });
-                          return text;
-                        };
-                      
-                        const rawHanzi = extractHanzi(children)
-                          .replace(/<[^>]*>?/gm, '')
-                          .replace(/[^\u4e00-\u9fff\u3400-\u4dbf]/g, '');
-                        
-                        return (
-                          <TTSPlayer
-                            text={rawHanzi}
-                            voice={settings.voice}
-                            rate={settings.playbackRate}
-                            mode="inline"
-                          >
-                            {children}
-                          </TTSPlayer>
-                        );
-                      },
-                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
-                  ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
-                }}
-              >
-                {/* Architecture Note: Token-aware AST pre-processor. Safely bypasses correctly wrapped <tts-block> and <tts-inline> nodes. Captures orphaned/naked <ruby> sequences in raw paragraph text and wraps them in a single <tts-inline> payload, preventing nested UI collisions and fragmented audio pills. */}
-                {msg.role === 'assistant' 
-                  ? sanitizePinyinLeak(msg.content).replace(/(<tts-(?:inline|block)>[\s\S]*?<\/tts-(?:inline|block)>)|((?:<ruby>[\s\S]*?<\/ruby>[\s]*)+)/g, (match, preservedBlock, nakedRubies) => {
-                      if (preservedBlock) return preservedBlock;
-                      if (nakedRubies) return `<tts-inline>${nakedRubies.trim()}</tts-inline>`;
-                      return match;
-                    })
-                  : msg.content}
-              </ReactMarkdown>
+                      p: ({ node, children, ...props }) => <p className="mb-4" {...props}>{React.Children.map(children, createNodeHydrator(settings))}</p>,
+                      li: ({ node, children, ...props }) => <li {...props}>{React.Children.map(children, createNodeHydrator(settings))}</li>,
+                      ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                      ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                      blockquote: ({ node, children, ...props }) => <blockquote className="border-l-4 border-slate-500 pl-4 my-4 italic" {...props}>{React.Children.map(children, createNodeHydrator(settings))}</blockquote>
+                   }}
+                 >
+                   {/* Architecture Note: LLM now outputs pure Markdown. Regex pre-processing is stripped. */}
+                   {msg.content}
+                 </ReactMarkdown>
             </div>
             </div>
           </div>
