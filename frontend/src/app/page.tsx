@@ -737,17 +737,35 @@ const sendPayload = async (userPrompt: string) => {
                           });
                           return text;
                         };
-                        const fullText = extractText(children).replace(/[^\u4e00-\u9fff\u3000-\u303F\uFF00-\uFFEF]/g, '');
+                        
+                        const rawText = extractText(children);
+                        const ttsPayload = rawText.replace(/[^\u4e00-\u9fff\u3000-\u303F\uFF00-\uFFEF]/g, '');
+                        
+                        // Architecture Note: Fetch pinyin array for the entire extracted string. 
+                        // This bypasses the nested <p> tag AST hydration, completely eliminating the double-pinyin 
+                        // and fragmented inline-pill rendering loop inside blockquotes.
+                        let pinyinArray = pinyinDictCache.get(rawText);
+                        if (!pinyinArray) {
+                          pinyinArray = pinyin(rawText, { type: 'array' });
+                          pinyinDictCache.set(rawText, pinyinArray);
+                        }
 
+                        // Architecture Note: Renders the block TTSPlayer directly without an outer <blockquote> border wrapper, eliminating double-border artifacts.
                         return (
-                          <TTSPlayer
-                            text={fullText}
-                            voice={settings.voice}
-                            rate={settings.playbackRate}
-                            mode="block"
-                          >
-                            {React.Children.map(children, createNodeHydrator(settings, false))}
-                          </TTSPlayer>
+                          <div className="my-3">
+                            <TTSPlayer
+                              text={ttsPayload}
+                              voice={settings.voice}
+                              rate={settings.playbackRate}
+                              mode="block"
+                            >
+                              {rawText.split('').map((char, i) => (
+                                /[\u4e00-\u9fff]/.test(char)
+                                  ? <ruby key={i}>{char}<rt>{pinyinArray[i]}</rt></ruby>
+                                  : <span key={i} className="mx-[0.05em] whitespace-pre-wrap">{char}</span>
+                              ))}
+                            </TTSPlayer>
+                          </div>
                         );
                       }
                    }}
