@@ -128,6 +128,10 @@ const sanitizePinyinLeak = (content: string): string => {
   return content.replace(/(\*\*[\u4e00-\u9fff]+\*\*)\s*\([a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s]+\)/g, '$1');
 };
 
+// Architecture Note: Global in-memory cache for pinyin dictionary lookups. 
+// Eliminates catastrophic O(N^2) main-thread CPU lockups during rapid SSE delta streaming by memoizing previously evaluated Hanzi text blocks across all historical messages.
+const pinyinDictCache = new Map<string, string[]>();
+
 // Architecture Note: Factory function generating a recursive AST interceptor. Extracted from the component render cycle to prevent redefining the recursive traversal on every re-render. Injects dynamic user settings (voice, rate) via closure to avoid prop-drilling through nested React nodes.
 const createNodeHydrator = (settings: any) => {
   const hydrateNode = (n: React.ReactNode): React.ReactNode => {
@@ -140,7 +144,12 @@ const createNodeHydrator = (settings: any) => {
         // Architecture Note: Loosened test to ensure the block contains AT LEAST one Hanzi, preventing pure whitespace/punctuation nodes from triggering edge-tts.
         if (/[\u4e00-\u9fff]/.test(part)) {
           // Dynamic pinyin hydration strictly relies on the upstream SSE text buffer completing phrases before rendering.
-          const pinyinArray = pinyin(part, { type: 'array' });
+          let pinyinArray = pinyinDictCache.get(part);
+          if (!pinyinArray) {
+            pinyinArray = pinyin(part, { type: 'array' });
+            pinyinDictCache.set(part, pinyinArray);
+          }
+          
           return (
             <TTSPlayer 
               key={`tts-${idx}`}

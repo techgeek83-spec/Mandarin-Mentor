@@ -98,6 +98,9 @@ class TTSRequest(BaseModel):
     voice: str = "zh-TW-HsiaoChenNeural"
     rate: str = "+0%"
 
+class ResetRequest(BaseModel):
+    session_id: str
+
 # Architectural Note: Rate limiting temporarily stripped to eliminate 4000ms+ TCP timeout delays caused by an offline local Redis instance.
 @app.post("/api/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)):
@@ -206,11 +209,11 @@ async def chat_stream(http_request: Request, request: ChatRequest):
     )
 
 @app.post("/api/reset")
-async def reset_session(request: Request):
-    """Architectural Note: Purges active session state directly from PostgreSQL tables."""
-    pool = request.app.state.pool
+async def reset_session(http_request: Request, request: ResetRequest):
+    """Architectural Note: Purges active session state directly from PostgreSQL tables via dynamic UUID."""
+    pool = http_request.app.state.pool
     try:
-        await clear_session(pool, SESSION_ID)
+        await clear_session(pool, request.session_id)
         return {"status": "success", "message": "Session history deleted from PostgreSQL"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reset database session: {str(e)}")

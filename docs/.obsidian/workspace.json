@@ -216,9 +216,23 @@
               "icon": "lucide-file",
               "title": "ADR-020-enforce-pure-markdown-in-LLM-output"
             }
+          },
+          {
+            "id": "c050c921e756c77b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "decisions/ADR-021-ast-pinyin-memoization.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "ADR-021-ast-pinyin-memoization"
+            }
           }
         ],
-        "currentTab": 14
+        "currentTab": 15
       }
     ],
     "direction": "vertical"
@@ -387,8 +401,9 @@
   },
   "active": "8a9300bbe8c4db27",
   "lastOpenFiles": [
-    "decisions/ADR-019-client-side-regex-interception-for-cjk-audio-hydration.md",
     "decisions/ADR-020-enforce-pure-markdown-in-LLM-output.md",
+    "decisions/ADR-021-ast-pinyin-memoization.md",
+    "decisions/ADR-019-client-side-regex-interception-for-cjk-audio-hydration.md",
     "architecture-state.md",
     "api-contracts.md",
     "STATE.md",
@@ -412,7 +427,6 @@
     "decisions/ADR-002-stt-runtime.md",
     "decisions/ADR-003-pwa-alpha-deployment.md",
     "decisions/ADR-004-alpha-runtime-target.md",
-    "decisions/ADR-005-sse-buffering-and-audio-concurrency.md",
     "decisions",
     "Mandarin mentor/decisions",
     "Mandarin mentor"
