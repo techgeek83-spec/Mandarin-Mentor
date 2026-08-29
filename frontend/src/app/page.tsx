@@ -137,7 +137,33 @@ export default function Chat() {
 
   useEffect(() => {
     setMounted(true);
+
+    // Architecture Note: Hydrates client session state on initial mount to restore historical context from PostgreSQL. Validates/initializes UUID.
+    let sid = localStorage.getItem('sessionId');
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem('sessionId', sid);
+    }
+
+    const fetchHistory = async () => {
+      try {
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+        const res = await fetch(`${apiBase}/api/history?session_id=${sid}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.messages && data.messages.length > 0) {
+            setMessages(data.messages);
+            setOnboardingComplete(true); // Bypass onboarding wizard if session history exists
+          }
+        }
+      } catch (err) {
+        console.error('Failed to hydrate session history:', err);
+      }
+    };
+
+    fetchHistory();
   }, []);
+
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   
@@ -327,27 +353,11 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
   };
   
   useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-}, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-useEffect(() => {
-  const fetchSessionData = async () => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/chat`);
-      if (!res.ok) throw new Error('Failed to fetch session data');
-
-      const data = await res.json();
-      if (data.messages && data.messages.length > 0) {
-        setMessages(data.messages);
-        setOnboardingComplete(true);
-      }
-    } catch (error) {
-      console.error("Session rehydration error:", error);
-    }
-  };
-
-  fetchSessionData();
-}, []);
+  // Architectural Note: Legacy GET /api/chat hydration removed to prevent 405 Method Not Allowed conflicts. 
+  // Session hydration is now exclusively handled via GET /api/history at the top of the component lifecycle.
 
 const sendPayload = async (userPrompt: string) => {
   setIsStreaming(true);
@@ -358,13 +368,18 @@ const sendPayload = async (userPrompt: string) => {
   ]);
 
   try {
-    // Architecture Note: Pipes client proficiency state into the POST payload to drive backend dynamic prompt scaffolding. Defaults to Beginner if state is uninitialized.
+    // Architecture Note: Injects persistent sessionId from localStorage alongside prompt and level to ensure transactional database persistence in PostgreSQL.
     // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into the client bundle
       const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const sessionId = typeof window !== 'undefined' ? localStorage.getItem('sessionId') || '' : '';
       const res = await fetch(`${apiBase}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: userPrompt, level: selectedLevel || "Level 1 (Beginner)" })
+        body: JSON.stringify({
+          prompt: userPrompt,
+          level: selectedLevel || "Level 1 (Beginner)",
+          session_id: sessionId
+        })
       });
 
     // Architectural Note: Ensure HTTP errors (4xx/500) fail fast before attaching ReadableStream reader

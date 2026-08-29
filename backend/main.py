@@ -94,6 +94,7 @@ Vocabulary Breakdown:
 class ChatRequest(BaseModel):
     prompt: str  # Delta payload: Only receive the newest message
     level: str = "Beginner" # Architecture Note: Client-provided proficiency state to drive dynamic prompt scaffolding.
+    session_id: str
 
 class TTSRequest(BaseModel):
     text: str
@@ -151,10 +152,11 @@ async def chat_stream(http_request: Request, request: ChatRequest):
         full_response = ""
         try:
             # Architectural Note: History load occurs inside the streaming generator to establish the SSE handshake immediately.
-            history_records = await load_session(pool, SESSION_ID) or []
+            # Hydrates session using dynamic client UUID to prevent cross-user state corruption.
+            history_records = await load_session(pool, request.session_id) or []
             
             # Persist incoming user prompt to PostgreSQL in a non-blocking background task
-            asyncio.create_task(save_message(pool, SESSION_ID, "user", request.prompt))
+            asyncio.create_task(save_message(pool, request.session_id, "user", request.prompt))
             history_records.append({"role": "user", "content": request.prompt})
             
             MAX_CONTEXT = 10
@@ -193,7 +195,7 @@ async def chat_stream(http_request: Request, request: ChatRequest):
         finally:
             # Architectural Note: Persist completed assistant stream asynchronously on teardown.
             if full_response:
-                asyncio.create_task(save_message(pool, SESSION_ID, "assistant", full_response))
+                asyncio.create_task(save_message(pool, request.session_id, "assistant", full_response))
 
     # Architectural Note: Explicit anti-buffering headers force Uvicorn and intermediate proxies to flush chunks immediately.
     return StreamingResponse(
