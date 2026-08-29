@@ -168,7 +168,6 @@ const createNodeHydrator = (settings: any) => {
 
 export default function Chat() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
->>>> SUCCEEDING
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
