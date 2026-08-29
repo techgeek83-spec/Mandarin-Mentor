@@ -1,4 +1,3 @@
-````
 # Mandarin Mentor: API Contracts & Schemas
 
 **1. Transcription Endpoint (`POST /api/transcribe`)**
@@ -8,9 +7,8 @@
 {
   "text": "string" // Normalized transcription; empty string on low-entropy/hallucination filter
 }
-````
-
-- - **Status Codes:** `200 OK`, `500 Internal Server Error`. _(Note: `429 Too Many Requests` currently disabled per ADR-017)._
+```
+- **Status Codes:** `200 OK`, `500 Internal Server Error`. _(Note: `429 Too Many Requests` currently disabled per ADR-017)._
     
 
 **2. Chat Streaming Endpoint (`POST /api/chat`)**
@@ -23,55 +21,62 @@
 JSON
 
 ```json
-{
+  {
   "prompt": "string",
   "level": "string",
   "session_id": "string" // Dynamic client-generated UUID for transactional PostgreSQL persistence
 }
 ```
 
-
-- **Payload Output Rules (ADR-016):**
+- **Payload Output Rules (ADR-016 / ADR-025):**
     
     - The LLM outputs pure conversational text and standard Markdown.
         
-    - **NO HTML TAGS ALLOWED.** The API will no longer emit `<ruby>`, `<rt>`, `<tts-inline>`, or `<tts-block>` wrappers.
+    - **NO HTML/XML TAGS ALLOWED.** The API will never emit `<ruby>`, `<rt>`, `<tts-inline>`, or `<tts-block>` wrappers.
+        
+    - Dialogue lines and practice sentences MUST be formatted in standalone Markdown blockquotes (`>`) containing only the Chinese text.
+        
+    - English translations must appear on separate non-quoted lines directly below the blockquote.
+        
+    - Target vocabulary tokens must be wrapped in standard Markdown bold markers (`**捷運**`).
         
 - **Client-Side SSE Chunk Aggregation & Hydration Invariants:**
     
-    - **Text Buffer Wait-State:** The client streaming consumer must buffer partial string chunks until a natural sentence or punctuation boundary is met.
+    - **Global Pinyin Memoization (ADR-021):** Client utilizes an out-of-lifecycle `Map<string, string[]>` cache to prevent $O(N^2)$ CPU lockups during rapid SSE delta streaming.
         
-    - **Contextual Hydration:** Complete phrases are required before execution of `pinyin-pro` dictionary lookups to prevent polyphone (多音字) mismatch.
+    - **AST Node Interception (ADR-026 / ADR-027):** Blockquotes are parsed line-by-line to isolate multi-turn dialogues into independent `<TTSPlayer mode="block">` components using isolated Hanzi cursor indexing.
         
 
 **3. Synthesize Audio Endpoint (`POST /api/tts`)**
 
 - **Request:**
-    
-
 JSON
 
 ```
-{{
-  "text": "string", // Pure Hanzi string extracted via client-side regex
-  "voice": "zh-TW-HsiaoChenNeural" // Default fallback
-}
+{ 
+"text": "string", // Pure Hanzi string extracted via client-side regex "voice": "zh-TW-HsiaoChenNeural", // Default fallback "rate": "+0%" // Normalized edge-tts percentage string[cite: 1, 2] 
 }
 ```
 
 - **Response:** JSON payload containing base64 encoded audio: `{"audio": "base64_encoded_string"}`
     
+    
+    
 - **Resilience:** Automatic fallback to `zh-TW-HsiaoYuNeural` on primary upstream WebSocket failure (502).
     
-- **Status Codes:** `200 OK`, `502 Bad Gateway` (Upstream TTS provider offline).
+- **Status Codes:** `200 OK`, `400 Bad Request`, `500 Internal Server Error`, `502 Bad Gateway` (Upstream TTS provider offline).
+    
 
 **4. Session History Endpoint (`GET /api/history`)**
+
+
 
 - **Protocol:** HTTP GET
     
 - **Query Parameters:** `session_id=string` (Dynamic UUID)
     
 - **Response:**
+    
     
 
 JSON
@@ -86,12 +91,31 @@ JSON
 
 **Status Codes:** `200 OK`, `404 Not Found` (Session missing), `500 Internal Server Error`.
 
-**[STATE SYNC REQUIRED]** Update `STATE.md`, `system_architecture.md`, and `api_contracts.md` to reflect these changes before starting a new task.
+**5. Session Reset Endpoint (`POST /api/reset`)**
 
-### E2E VALIDATION PAUSE
-
-Execution halted. To resolve the active backlog blocker and finalize the Supabase E2E integration, provide the following **Context Snapshots**:
-
-1. **FastAPI Backend:** The `asyncpg` query function and router definition for `GET /api/history` (or state "No GET route exists").
+- **Protocol:** HTTP POST
     
-2. **Next.js Client:** The top 20-30 lines of `src/app/page.tsx` showing `useState`, `session_id` logic, and any mount `useEffect`.
+- **Request Payload (ADR-022):**
+    
+
+JSON
+
+```
+{
+  "session_id": "string" // Dynamic UUID targeting PostgreSQL records
+}
+```
+
+- **Response:**
+    
+
+JSON
+
+```
+{
+  "status": "success",
+  "message": "Session history deleted from PostgreSQL"
+}
+```
+
+- **Status Codes:** `200 OK`, `500 Internal Server Error`.
