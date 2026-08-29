@@ -349,7 +349,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ADR-030-AST-Bold-Token-Audio-Bounding.md",
+                "file": "decisions/ADR-030-AST-Bold-Token-Audio-Bounding.md",
                 "mode": "source",
                 "source": false
               },
@@ -525,10 +525,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "c956ae0bb26f3e0f",
+  "active": "8a9300bbe8c4db27",
   "lastOpenFiles": [
     "decisions/ADR-029-Restore-Managed-Auth-Roadmap.md",
-    "ADR-030-AST-Bold-Token-Audio-Bounding.md",
+    "decisions/ADR-030-AST-Bold-Token-Audio-Bounding.md",
     "STATE.md",
     "api-contracts.md",
     "architecture-state.md",

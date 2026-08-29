@@ -177,15 +177,9 @@ const createNodeHydrator = (settings: any, renderTTS: boolean = true) => {
       });
     }
     
-    if (React.isValidElement(n)) {
-      // Architecture Note: Cast n to ReactElement and clone props safely to satisfy TypeScript strict mode
-      const element = n as React.ReactElement<any>;
-      return React.cloneElement(
-        element,
-        { ...element.props } as any,
-        React.Children.map(element.props.children, hydrateNode)
-      );
-    }
+    // Architecture Note: Removed recursive React.isValidElement() cloning. 
+    // ReactMarkdown natively manages AST depth. Returning elements untouched prevents 
+    // parent nodes (p, li) from double-hydrating the inner `<TTSPlayer>` elements of child nodes (strong).
     if (Array.isArray(n)) return React.Children.map(n, hydrateNode);
     return n;
   };
