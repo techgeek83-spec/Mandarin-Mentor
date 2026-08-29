@@ -727,7 +727,7 @@ const sendPayload = async (userPrompt: string) => {
                       ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
                       ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
                       blockquote: ({ node, children, ...props }) => {
-                        // Architecture Note: Recursive text extractor to obtain the pure Hanzi string for block-level edge-tts synthesis.
+                        // Architecture Note: Recursive text extractor to obtain raw line strings from blockquote AST node children.
                         const extractText = (n: React.ReactNode): string => {
                           let text = '';
                           React.Children.forEach(n, (child) => {
@@ -739,31 +739,15 @@ const sendPayload = async (userPrompt: string) => {
                         };
                         
                         const rawText = extractText(children);
-                        const ttsPayload = rawText.replace(/[^\u4e00-\u9fff\u3000-\u303F\uFF00-\uFFEF]/g, '');
-                        
-                        // Architecture Note: Fetch pinyin array for the entire extracted string. 
-                        // This bypasses the nested <p> tag AST hydration, completely eliminating the double-pinyin 
-                        // and fragmented inline-pill rendering loop inside blockquotes.
-                        let pinyinArray = pinyinDictCache.get(rawText);
-                        if (!pinyinArray) {
-                          pinyinArray = pinyin(rawText, { type: 'array' });
-                          pinyinDictCache.set(rawText, pinyinArray);
-                        }
-
-                        // Architecture Note: Splits multi-line blockquotes into distinct block-level audio cards. 
-                        // Prevents multi-turn dialogues and adjacent English translation notes from collapsing into a single audio instance.
-                        const lines = rawText.split('\n').filter((line) => line.trim().length > 0);
+                        // Architecture Note: Splits multi-line dialogue blockquotes into distinct block-level audio cards.
+                        // Trims empty lines and maps each sentence to an independent TTSPlayer.
+                        const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
                         return (
                           <div className="my-3 space-y-2">
                             {lines.map((line, lineIdx) => {
                               const lineTTS = line.replace(/[^\u4e00-\u9fff\u3000-\u303F\uFF00-\uFFEF]/g, '');
-                              let linePinyin = pinyinDictCache.get(line);
-                              if (!linePinyin) {
-                                linePinyin = pinyin(line, { type: 'array' });
-                                pinyinDictCache.set(line, linePinyin);
-                              }
-
+                              
                               // Non-CJK lines (e.g. standalone English translations inside quotes) render as plain text without TTS wrappers
                               if (!/[\u4e00-\u9fff]/.test(line)) {
                                 return (
@@ -773,6 +757,17 @@ const sendPayload = async (userPrompt: string) => {
                                 );
                               }
 
+                              // Architecture Note: Isolate pure Hanzi characters before generating pinyin array.
+                              // Indexing pinyin-pro directly against mixed strings causes index offset drift when whitespace or punctuation is present.
+                              const hanziOnly = line.replace(/[^\u4e00-\u9fff]/g, '');
+                              let linePinyin = pinyinDictCache.get(hanziOnly);
+                              if (!linePinyin) {
+                                linePinyin = pinyin(hanziOnly, { type: 'array' });
+                                pinyinDictCache.set(hanziOnly, linePinyin);
+                              }
+
+                              let hanziCursor = 0;
+
                               return (
                                 <TTSPlayer
                                   key={`quote-line-${lineIdx}`}
@@ -781,11 +776,14 @@ const sendPayload = async (userPrompt: string) => {
                                   rate={settings.playbackRate}
                                   mode="block"
                                 >
-                                  {line.split('').map((char, i) => (
-                                    /[\u4e00-\u9fff]/.test(char)
-                                      ? <ruby key={i}>{char}<rt>{linePinyin[i]}</rt></ruby>
-                                      : <span key={i} className="mx-[0.05em] whitespace-pre-wrap">{char}</span>
-                                  ))}
+                                  {line.split('').map((char, i) => {
+                                    if (/[\u4e00-\u9fff]/.test(char)) {
+                                      const rubyAnnotation = linePinyin ? linePinyin[hanziCursor] : '';
+                                      hanziCursor++;
+                                      return <ruby key={i}>{char}<rt>{rubyAnnotation}</rt></ruby>;
+                                    }
+                                    return <span key={i} className="mx-[0.05em] whitespace-pre-wrap">{char}</span>;
+                                  })}
                                 </TTSPlayer>
                               );
                             })}
