@@ -158,7 +158,13 @@ const createNodeHydrator = (settings: any) => {
     }
     
     if (React.isValidElement(n)) {
-      return React.cloneElement(n, n.props, React.Children.map((n.props as any).children, hydrateNode));
+      // Architecture Note: Cast n to ReactElement and clone props safely to satisfy TypeScript strict mode
+      const element = n as React.ReactElement<any>;
+      return React.cloneElement(
+        element,
+        { ...element.props } as any,
+        React.Children.map(element.props.children, hydrateNode)
+      );
     }
     if (Array.isArray(n)) return React.Children.map(n, hydrateNode);
     return n;
