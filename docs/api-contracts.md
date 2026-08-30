@@ -6,21 +6,20 @@
 
 **1. Transcription Endpoint (`POST /api/transcribe`)**
 * **Request:** `multipart/form-data` containing `file: UploadFile` (16kHz mono audio/webm or audio/wav).
+* **Headers:** `Authorization: Bearer <token>`
 * **Response:**
 ```json
 {
   "text": "string" // Normalized transcription; empty string on low-entropy/hallucination filter
 }
 ```
-- **Status Codes:** `200 OK`, `500 Internal Server Error`. _(Note: `429 Too Many Requests` currently disabled per ADR-017)._
-    
+- **Status Codes:** `200 OK`, `500 Internal Server Error`. _(Note: `429 Too Many Requests` currently disabled per ADR-017)._    
 
 **2. Chat Streaming Endpoint (`POST /api/chat`)**
 
 - **Protocol:** Server-Sent Events (`text/event-stream`).
-    
-- **Request Payload:**
-    
+- **Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`    
+- **Request Payload:**    
 
 JSON
 
@@ -50,9 +49,11 @@ JSON
         
     - **AST Node Interception (ADR-026 / ADR-027):** Blockquotes are parsed line-by-line to isolate multi-turn dialogues into independent `<TTSPlayer mode="block">` components using isolated Hanzi cursor indexing.
     - **Global Hydration Invariant (ADR-031):** The frontend hydrator parses all conversational and vocabulary CJK tokens in-place without requiring AST hierarchy differentiation between paragraphs and bold elements.
+    - - **Status Codes:** `200 OK`, `401 Unauthorized`, `500 Internal Server Error`.
 
 **3. Synthesize Audio Endpoint (`POST /api/tts`)**
 
+- **Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`
 - **Request:**
 JSON
 
@@ -68,7 +69,7 @@ JSON
     
 - **Resilience:** Automatic fallback to `zh-TW-HsiaoYuNeural` on primary upstream WebSocket failure (502).
     
-- **Status Codes:** `200 OK`, `400 Bad Request`, `500 Internal Server Error`, `502 Bad Gateway` (Upstream TTS provider offline).
+- - **Status Codes:** `200 OK`, `400 Bad Request`, `401 Unauthorized`, `500 Internal Server Error`, `502 Bad Gateway` (Upstream TTS provider offline).
     
 
 **4. Session History Endpoint (`GET /api/history`)**
@@ -76,12 +77,9 @@ JSON
 
 
 - **Protocol:** HTTP GET
-    
-- **Query Parameters:** `session_id=string` (Dynamic UUID)
-    
-- **Response:**
-    
-    
+- **Headers:** `Authorization: Bearer <token>`    
+- **Query Parameters:** `session_id=string` (Dynamic UUID)    
+- **Response:**  
 
 JSON
 
@@ -93,14 +91,13 @@ JSON
 }
 ```
 
-**Status Codes:** `200 OK`, `404 Not Found` (Session missing), `500 Internal Server Error`.
+**Status Codes:** `200 OK`, `401 Unauthorized`, `404 Not Found` (Session missing), `500 Internal Server Error`.
 
 **5. Session Reset Endpoint (`POST /api/reset`)**
 
 - **Protocol:** HTTP POST
-    
-- **Request Payload (ADR-022):**
-    
+- **Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`    
+- **Request Payload (ADR-022):**    
 
 JSON
 
@@ -122,4 +119,4 @@ JSON
 }
 ```
 
-- **Status Codes:** `200 OK`, `500 Internal Server Error`.
+**Status Codes:** `200 OK`, `401 Unauthorized`, `500 Internal Server Error`.

@@ -419,12 +419,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ADR-034-stateless-supabase-jwt-gateway-security.md",
+                "file": "api-contracts.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ADR-034-stateless-supabase-jwt-gateway-security"
+              "title": "api-contracts"
             }
           }
         ],
@@ -597,9 +597,9 @@
   },
   "active": "e487107205c05fce",
   "lastOpenFiles": [
+    "ADR-034-stateless-supabase-jwt-gateway-security.md",
     "api-contracts.md",
     "STATE.md",
-    "ADR-034-stateless-supabase-jwt-gateway-security.md",
     "architecture-state.md",
     "decisions/ADR-034-direct-jwt-gateway.md",
     "decisions/ADR-033-nextjs-proxy-ipv6-routing.md",
