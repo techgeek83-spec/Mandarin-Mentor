@@ -35,7 +35,7 @@
 ---
 
 **Infrastructure & Deployment (Alpha)**
-* **Frontend (Vercel):** Edge CDN deployment for Next.js App Router and `@serwist/next` Service Worker caching.
+* **Frontend (Vercel):** Edge CDN deployment for Next.js App Router and `@serwist/next` Service Worker caching. Vercel Edge API Routes proxy all traffic to Fly.io to prevent client-side secret exposure (ADR-033).
 * **Backend (Fly.io):** Persistent Dockerized micro-VMs deployed to `nrt` (Tokyo) or `sin` (Singapore) to ensure sub-50ms network latency.
-* **Database (Supabase):** PostgreSQL connection pooling via `asyncpg` strictly routed through the Supavisor transaction pooler (port `6543`) to prevent connection exhaustion.
-* **Gateway Security:** Rate Limiting is currently DISABLED (ADR-017). Protected temporarily by a static Pre-Shared Key (PSK) authentication header (ADR-032) to prevent unauthorized API execution.
+* **Database (Supabase):** IPv6 Direct Connection routing (port `5432`) bypassing transaction poolers to ensure native `asyncpg` prepared statement compatibility (ADR-033). 
+* **Gateway Security:** Rate Limiting is currently DISABLED (ADR-017). Protected by a static Pre-Shared Key (PSK) injected exclusively at the Vercel Edge proxy layer.

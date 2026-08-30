@@ -32,12 +32,15 @@
 **Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
 
 ### Active Backlog
-1. **Fly.io & Vercel Cloud Deployment:** Containerize the FastAPI backend for Fly.io (`nrt`/`sin` regions) and deploy the Next.js frontend to Vercel.
-2. **Static API Gateway Security (ADR-032):** Implement a lightweight pre-shared key (PSK) header validation on all FastAPI routes to protect Groq/Gemini endpoints from public abuse prior to full JWT rollout.
-3. **Constrain Inline Audio Pills:** Restrict `<TTSPlayer mode="inline">` strictly to bolded Markdown vocabulary tokens (`**Hanzi**`), allowing free-form Chinese text in paragraphs and explanations to display ruby pinyin without actionable audio buttons.
-4. **Re-architect Redis Rate Limiting:** Implement non-blocking token-bucket rate limiter that fails open without delaying SSE stream connection.
-5. **PWA Service Worker Verification:** Complete offline cache auditing and verify installability across mobile viewports.
-6. **Frontend Lockdown & Sync:** Verify baseline stability across all mobile viewports following the ADR-031 stabilization.
+1. **Frontend Auth Lifecycle (Supabase):** Implement `@supabase/supabase-js` anonymous sign-in and session state hydration in the Next.js client.
+2. **Backend Stateless JWT Validation:** Integrate `PyJWT` into FastAPI to validate Supabase signatures locally, guaranteeing zero database roundtrips for API gateway ingress (ADR-034).
+3. **Client-Side Header Injection:** Update Next.js `fetch` wrappers to inject `Authorization: Bearer <token>` into all Fly.io API payload requests.
+4. **Fly.io & Vercel Cloud Deployment:** Containerize the FastAPI backend for Fly.io (`nrt`/`sin` regions) and deploy the Next.js frontend to Vercel.
+5. **IPv6 Database Routing (ADR-033):** Configure FastAPI `asyncpg` to utilize Supabase direct IPv6 connections (port 5432) to restore prepared statement stability.
+6. **Constrain Inline Audio Pills:** Restrict `<TTSPlayer mode="inline">` strictly to bolded Markdown vocabulary tokens (`**Hanzi**`), allowing free-form Chinese text in paragraphs and explanations to display ruby pinyin without actionable audio buttons.
+7. **Re-architect Redis Rate Limiting:** Implement non-blocking token-bucket rate limiter that fails open without delaying SSE stream connection.
+8. **PWA Service Worker Verification:** Complete offline cache auditing and verify installability across mobile viewports.
+9. **Frontend Lockdown & Sync:** Verify baseline stability across all mobile viewports following the ADR-031 stabilization.
 
 ### Technical Debt & Accepted Trade-offs
 * **LLM Formatting Constraints Stripped (ADR-016 / ADR-020):** LLM emits pure Markdown. All layout, ruby annotation, and TTS bindings are derived client-side from the AST.
