@@ -88,9 +88,17 @@ if not GEMINI_API_KEY:
 client = genai.Client(api_key=GEMINI_API_KEY)
 app = FastAPI(title="Mandarin Mentor API", lifespan=lifespan)
 
+# Architecture Note: Dynamically map Vercel origin via FRONTEND_URL to allow cross-origin requests in cloud production while preserving local development access.
+frontend_origin = os.getenv("FRONTEND_URL", "http://localhost:3000")
+allowed_origins = [
+    "http://localhost:3000",
+]
+if frontend_origin not in allowed_origins:
+    allowed_origins.append(frontend_origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
