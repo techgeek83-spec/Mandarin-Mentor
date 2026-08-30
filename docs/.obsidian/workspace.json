@@ -8,455 +8,20 @@
         "type": "tabs",
         "children": [
           {
-            "id": "157bbd1f010464a6",
+            "id": "8d76d3449a242a7b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "CHANGELOG.md",
+                "file": "Untitled 1.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "CHANGELOG"
-            }
-          },
-          {
-            "id": "22ee2cef01dfb64f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Cloud-deployment-workflow.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Cloud-deployment-workflow"
-            }
-          },
-          {
-            "id": "ee32c6dd3e7ee2ac",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-008-migration-to-postgressql.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-008-migration-to-postgressql"
-            }
-          },
-          {
-            "id": "4a81170780fb512d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-010-dynamic-session-routing-and-state-hydration.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-010-dynamic-session-routing-and-state-hydration"
-            }
-          },
-          {
-            "id": "2c08db77e512c5a5",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-011-async-db-pipe-and-flash-lite-migration.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-011-async-db-pipe-and-flash-lite-migration"
-            }
-          },
-          {
-            "id": "069f179bee8149a9",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-012-pinning-gemini-3-5-flash-lite.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-012-pinning-gemini-3-5-flash-lite"
-            }
-          },
-          {
-            "id": "bc6ab034d25b8549",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-013-sse-headers-and-ast-reversion.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-013-sse-headers-and-ast-reversion"
-            }
-          },
-          {
-            "id": "a39a724b42b713d9",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-014-reinstating-llm-driven-ast-tagging.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-014-reinstating-llm-driven-ast-tagging"
-            }
-          },
-          {
-            "id": "2e7e416626f49884",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Development notes.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Development notes"
-            }
-          },
-          {
-            "id": "398a39bf2abf15a2",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-016-client-side-deterministic-tts-hydration.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-016-client-side-deterministic-tts-hydration"
-            }
-          },
-          {
-            "id": "21ba1e18c9b7d7e5",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Development notes.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Development notes"
-            }
-          },
-          {
-            "id": "a09bc599fc0038fc",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Development notes.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Development notes"
-            }
-          },
-          {
-            "id": "52109c4e43c59671",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "architecture-state.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "architecture-state"
-            }
-          },
-          {
-            "id": "f55097f8c62ea28d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-019-client-side-regex-interception-for-cjk-audio-hydration.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-019-client-side-regex-interception-for-cjk-audio-hydration"
-            }
-          },
-          {
-            "id": "1b1195d7a7f1d21f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-020-enforce-pure-markdown-in-LLM-output.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-020-enforce-pure-markdown-in-LLM-output"
-            }
-          },
-          {
-            "id": "c050c921e756c77b",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-021-ast-pinyin-memoization.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-021-ast-pinyin-memoization"
-            }
-          },
-          {
-            "id": "65fbc2a135956daf",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-022-dynamic-postgreSQL-Session-Reset.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-022-dynamic-postgreSQL-Session-Reset"
-            }
-          },
-          {
-            "id": "8b650997b59880aa",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-023-Blockquote-Sentence-TTS-Mapping.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-023-Blockquote-Sentence-TTS-Mapping"
-            }
-          },
-          {
-            "id": "1a0e7f7011dd7de8",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-024-Blockquote-Border-Deduplication.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-024-Blockquote-Border-Deduplication"
-            }
-          },
-          {
-            "id": "2a30a6a4a91c4fdc",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-025-Blockquote-Line-Splitting-and-Audio-Isolation.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-025-Blockquote-Line-Splitting-and-Audio-Isolation"
-            }
-          },
-          {
-            "id": "c85e056387f73ca8",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-026-AST-Blockquote-Sentence-Separation.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-026-AST-Blockquote-Sentence-Separation"
-            }
-          },
-          {
-            "id": "944f5d17dc0798a5",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-027-Isolated-Hanzi-Pinyin-Cursor-Indexing.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-027-Isolated-Hanzi-Pinyin-Cursor-Indexing"
-            }
-          },
-          {
-            "id": "9cc23f04e8ac2b80",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "STATE.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "STATE"
-            }
-          },
-          {
-            "id": "0b0ddb84875c23f9",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-029-Restore-Managed-Auth-Roadmap.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-029-Restore-Managed-Auth-Roadmap"
-            }
-          },
-          {
-            "id": "c956ae0bb26f3e0f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "STATE.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "STATE"
-            }
-          },
-          {
-            "id": "77d98b104b0be0ac",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "STATE.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "STATE"
-            }
-          },
-          {
-            "id": "0e2951d82fedbabf",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Development notes.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Development notes"
-            }
-          },
-          {
-            "id": "e2800847b3cd4154",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "architecture-state.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "architecture-state"
-            }
-          },
-          {
-            "id": "30673714efa5f400",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "api-contracts.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "api-contracts"
-            }
-          },
-          {
-            "id": "e487107205c05fce",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "STATE.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "STATE"
-            }
-          },
-          {
-            "id": "fe18fdc38b6d6914",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "decisions/ADR-035-fly.io-edge-deployment-and-containerization-strategy.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ADR-035-fly.io-edge-deployment-and-containerization-strategy"
-            }
-          },
-          {
-            "id": "eefcc53ac6a60e52",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Untitled.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Untitled"
+              "title": "Untitled 1"
             }
           }
-        ],
-        "currentTab": 31
+        ]
       }
     ],
     "direction": "vertical"
@@ -623,34 +188,34 @@
       "bases:Create new base": false
     }
   },
-  "active": "eefcc53ac6a60e52",
+  "active": "8d76d3449a242a7b",
   "lastOpenFiles": [
+    "decisions/ADR-023-Blockquote-Sentence-TTS-Mapping.md",
+    "Untitled 1.md",
+    "decisions/ADR-022-dynamic-postgreSQL-Session-Reset.md",
+    "decisions/ADR-021-ast-pinyin-memoization.md",
+    "decisions/ADR-020-enforce-pure-markdown-in-LLM-output.md",
+    "decisions/ADR-019-client-side-regex-interception-for-cjk-audio-hydration.md",
+    "architecture-state.md",
+    "Development notes.md",
+    "decisions/ADR-016-client-side-deterministic-tts-hydration.md",
+    "decisions/ADR-014-reinstating-llm-driven-ast-tagging.md",
+    "decisions/ADR-013-sse-headers-and-ast-reversion.md",
+    "decisions/ADR-012-pinning-gemini-3-5-flash-lite.md",
+    "decisions/ADR-011-async-db-pipe-and-flash-lite-migration.md",
+    "decisions/ADR-010-dynamic-session-routing-and-state-hydration.md",
+    "decisions/ADR-008-migration-to-postgressql.md",
+    "Cloud-deployment-workflow.md",
     "decisions/ADR-035-fly.io-edge-deployment-and-containerization-strategy.md",
     "Untitled.md",
     "STATE.md",
-    "Development notes.md",
     "api-contracts.md",
     "decisions/ADR-034-stateless-supabase-jwt-gateway-security.md",
-    "architecture-state.md",
     "decisions/ADR-034-direct-jwt-gateway.md",
     "decisions/ADR-033-nextjs-proxy-ipv6-routing.md",
     "decisions/ADR-032-cloud-deployment-topology-and-static-api-gateway-security.md",
     "decisions/ADR-031-Deprecation-of-Inline-Audio-Pill-Bounding.md",
     "decisions/ADR-030-AST-Bold-Token-Audio-Bounding.md",
-    "decisions/ADR-029-Restore-Managed-Auth-Roadmap.md",
-    "decisions/ADR-028-AST-State-Consolidation-and-Markdown-Routing.md",
-    "decisions/ADR-027-Isolated-Hanzi-Pinyin-Cursor-Indexing.md",
-    "decisions/ADR-026-AST-Blockquote-Sentence-Separation.md",
-    "decisions/ADR-025-Blockquote-Line-Splitting-and-Audio-Isolation.md",
-    "decisions/ADR-024-Blockquote-Border-Deduplication.md",
-    "decisions/ADR-023-Blockquote-Sentence-TTS-Mapping.md",
-    "decisions/ADR-022-dynamic-postgreSQL-Session-Reset.md",
-    "decisions/ADR-021-ast-pinyin-memoization.md",
-    "decisions/ADR-020-enforce-pure-markdown-in-LLM-output.md",
-    "decisions/ADR-019-client-side-regex-interception-for-cjk-audio-hydration.md",
-    "decisions/ADR-018-definition-of-done.md",
-    "ADR-018-definition-of-done.md",
-    "decisions/ADR-017-temporary-removal-of-redis-rate-limiting.md",
     "decisions",
     "Mandarin mentor/decisions",
     "Mandarin mentor"
