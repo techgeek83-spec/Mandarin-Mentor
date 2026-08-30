@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { Viewport } from 'next';
 import { Nunito } from 'next/font/google';
 import './globals.css';
 import { Outfit } from 'next/font/google';
@@ -14,9 +15,28 @@ const outfit = Outfit({
   variable: '--font-outfit'
 });
 
+// Architectural Note: viewport-fit=cover and userScalable=false eliminate elastic bounce and zooming shifts during mobile virtual keyboard activation.
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   title: 'Mandarin Mentor',
   description: 'Taiwanese Mandarin Coaching',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Mandarin',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

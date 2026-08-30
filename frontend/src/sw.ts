@@ -1,6 +1,7 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Serwist } from "serwist";
+// Architectural Note: NetworkOnly class instance is strictly required by Serwist's RouteHandler type definition; string literals are rejected by TypeScript.
+import { NetworkOnly, Serwist } from "serwist";
 
 // Architectural Note: Global type declaration required to inject Webpack precache manifest at compile-time without TypeScript compiler panics.
 declare global {
@@ -21,7 +22,7 @@ const serwist = new Serwist({
   runtimeCaching: [
     {
       matcher: ({ url }) => url.pathname.startsWith("/api/"),
-      handler: "NetworkOnly",
+      handler: new NetworkOnly(),
     },
     ...defaultCache,
   ],
