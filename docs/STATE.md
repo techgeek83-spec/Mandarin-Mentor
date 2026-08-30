@@ -31,18 +31,22 @@
 - [x] **Global Hydration Invariant (ADR-031):** The frontend hydrator parses all conversational and vocabulary CJK tokens in-place without requiring AST hierarchy differentiation between paragraphs and bold elements.
 - [x] **Stateless JWT Validation (ADR-034):** FastAPI ingress routes secured with `HTTPBearer` token verification; frontend hydration and fetch pipelines pass valid Supabase anonymous JWTs.
 - [x] **Fly.io Backend Edge Deployment (ADR-036):** Containerized FastAPI backend deployed to `nrt`, verified stateless 401 JWT rejections, CORS preflight headers, and clean `asyncpg` pool initialization against Supabase IPv4 pooler.
+- [x] **Vercel Production Edge Ingress & Serwist PWA Scaffolding (ADR-037):** Next.js App Router deployed to Vercel with `@serwist/next` Webpack compilation, dynamic wildcard CORS routing in FastAPI, unified client environment variable binding, and DOM accessibility/LNA compliance.
+
+**Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
 
 **Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
 
 ### Active Backlog
-1. **Fly.io & Vercel Cloud Deployment:** Containerize the FastAPI backend with multi-stage Dockerfile for Fly.io (`nrt`/`sin` regions) and deploy Next.js frontend to Vercel.
-2. **IPv6 Database Routing (ADR-033):** Configure FastAPI `asyncpg` to utilize Supabase direct IPv6 connections (port 5432) to restore prepared statement stability.
+1. **Fly.io & Vercel Cloud Deployment:** Complete. Transitioned to active operations and maintenance.
+2. **Database Ingress Standardization (ADR-038):** Formally deprecated ADR-033. Direct IPv6 routing abandoned; Supabase IPv4 Transaction Pooler (port 6543) locked in with `statement_cache_size=0`.
 3. **Constrain Inline Audio Pills:** Restrict `<TTSPlayer mode="inline">` strictly to bolded Markdown vocabulary tokens (`**Hanzi**`), allowing free-form Chinese text in paragraphs and explanations to display ruby pinyin without actionable audio buttons.
 4. **Re-architect Redis Rate Limiting:** Implement non-blocking token-bucket rate limiter that fails open without delaying SSE stream connection.
 5. **PWA Service Worker Verification:** Complete offline cache auditing and verify installability across mobile viewports.
 6. **Frontend Lockdown & Sync:** Verify baseline stability across all mobile viewports following the ADR-031 stabilization.
 
 ### Technical Debt & Accepted Trade-offs
+* **Database Statement Caching Disabled (ADR-038):** `asyncpg` runs with `statement_cache_size=0` to remain compatible with Supabase's transaction pooler (port 6543), trading query preparation cache for zero-friction pooling stability.
 * **LLM Formatting Constraints Stripped (ADR-016 / ADR-020):** LLM emits pure Markdown. All layout, ruby annotation, and TTS bindings are derived client-side from the AST.
 * **Unprotected API / Redis Stripped (ADR-017):** Rate-limiting middleware is bypassed to maintain sub-second TTFB. API must be hardened before public release.
 * **Whisper Hallucinations (ADR-002):** Groq Whisper-large-v3-turbo occasionally hallucinates on ambient noise; filtered via entropy/length thresholds.

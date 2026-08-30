@@ -1,0 +1,7 @@
+# ADR-038: Deprecation of Direct IPv6 Routing in Favor of Supabase Transaction Pooler (Port 6543)
+
+* **Date:** 2026-08-31
+* **Status:** Accepted (Deprecates ADR-033)
+* **Context:** ADR-033 targeted bypassing Supabase's transaction pooler via direct IPv6 connections (port 5432) to restore `asyncpg` prepared statement caching. However, Fly.io micro-VMs lack dedicated IPv6 egress routing out of the box, leading to DNS resolution timeouts and connection fragility during cold boots. Concurrently, conversational database writes are low-frequency single-turn transactions where prepared statement cache gains are imperceptible.
+* **Decision:** Formally abandon direct IPv6 database routing. Standardize backend database ingress exclusively on the Supabase IPv4 Transaction Pooler (Supavisor / port 6543). To eliminate transaction boundary conflicts (`prepared statement does not exist`), the FastAPI `asyncpg` connection pool must strictly initialize with `statement_cache_size=0`.
+* **Consequences:** Eliminates external DNS resolution risks and Fly.io deployment dependencies. Guarantees connection stability on low-tier and micro-VM infrastructure. Accepts minor CPU overhead from re-parsing SQL queries on each execution.
