@@ -11,6 +11,7 @@ import { useSettings } from '@/hooks/use-settings';
 import { SettingsDrawer } from '@/components/settings-drawer';
 import { pinyin } from 'pinyin-pro';
 import rehypeRaw from 'rehype-raw';
+import { getValidToken } from '@/lib/supabase';
 
 // Architecture Note: Unified headless audio controller handling both inline vocabulary and block-level dialogue. Removes the restrictive 'pill' background in favor of native font scaling and a minimal adjacent play icon.
 const TTSPlayer = ({
@@ -64,9 +65,14 @@ const TTSPlayer = ({
 
       // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into the client bundle
       const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const token = await getValidToken();
+      // Architecture Note: Injects Supabase JWT Bearer token to authorize ingress requests at the FastAPI gateway.
       const res = await fetch(`${apiBase}/api/tts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ text: cleanText, voice, rate: normalizedRate }),
       });
       if (!res.ok) throw new Error('TTS fetch failed');
@@ -211,8 +217,14 @@ export default function Chat() {
 
     const fetchHistory = async () => {
       try {
+        const token = await getValidToken();
         const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-        const res = await fetch(`${apiBase}/api/history?session_id=${sid}`);
+        // Architecture Note: Injects Supabase JWT Bearer token for session hydration authorization.
+        const res = await fetch(`${apiBase}/api/history?session_id=${sid}`, {
+          headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.messages && data.messages.length > 0) {
@@ -288,8 +300,13 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
 
       // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into client bundle
       const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const token = await getValidToken();
+      // Architecture Note: Injects Supabase JWT Bearer token for audio transcription multipart upload.
       const res = await fetch(`${apiBase}/api/transcribe`, {
         method: 'POST',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: formData,
       });
 
@@ -436,9 +453,14 @@ const sendPayload = async (userPrompt: string) => {
     // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into the client bundle
       const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
       const sessionId = typeof window !== 'undefined' ? localStorage.getItem('sessionId') || '' : '';
+      const token = await getValidToken();
+      // Architecture Note: Injects Supabase JWT Bearer token for streaming SSE chat completions.
       const res = await fetch(`${apiBase}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           prompt: userPrompt,
           level: selectedLevel || "Level 1 (Beginner)",

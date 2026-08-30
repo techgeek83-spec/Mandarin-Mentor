@@ -405,12 +405,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "STATE.md",
+                "file": "api-contracts.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "STATE"
+              "title": "api-contracts"
             }
           }
         ],
@@ -583,9 +583,9 @@
   },
   "active": "30673714efa5f400",
   "lastOpenFiles": [
-    "decisions/ADR-034-direct-jwt-gateway.md",
     "architecture-state.md",
     "STATE.md",
+    "decisions/ADR-034-direct-jwt-gateway.md",
     "decisions/ADR-033-nextjs-proxy-ipv6-routing.md",
     "Development notes.md",
     "decisions/ADR-032-cloud-deployment-topology-and-static-api-gateway-security.md",

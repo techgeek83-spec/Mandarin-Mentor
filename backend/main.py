@@ -15,6 +15,35 @@ from pydantic import BaseModel
 from rate_limiter import limiter, rate_limit
 from database import init_db_pool, close_db_pool
 
+from database import init_db_pool, close_db_pool
+import jwt
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Security, status
+
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+security = HTTPBearer()
+
+# Architecture Note: Stateless JWT signature verification validates Supabase access tokens locally using HS256 without database or auth server roundtrips (ADR-034).
+def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+    if not SUPABASE_JWT_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="SUPABASE_JWT_SECRET is not configured on backend."
+        )
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(
+            token,
+            SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
+            options={"verify_aud": False}
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired.")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}")
+
 # Architecture Note: Manage lifecycle events for Redis connection pool and asyncpg PostgreSQL pool cleanly. Binds the asyncpg connection pool to the ASGI application lifecycle to prevent connection leaks during worker reloads.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -104,7 +133,7 @@ class ResetRequest(BaseModel):
 
 # Architectural Note: Rate limiting temporarily stripped to eliminate 4000ms+ TCP timeout delays caused by an offline local Redis instance.
 @app.post("/api/transcribe")
-async def transcribe_audio(file: UploadFile = File(...)):
+async def transcribe_audio(file: UploadFile = File(...), _user: dict = Depends(verify_token)):
     if not groq_client:
         raise HTTPException(status_code=500, detail="Groq API key not configured on backend.")
     
@@ -137,7 +166,7 @@ async def transcribe_audio(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
     
 @app.get("/api/history")
-async def get_session_history(request: Request, session_id: str):
+async def get_session_history(request: Request, session_id: str, _user: dict = Depends(verify_token)):
     """Authoritative read-only hydration endpoint backed by PostgreSQL. Implements E2E read-path."""
     pool = request.app.state.pool
     # Architecture Note: Hydrates session using the client-provided session_id to prevent cross-user state corruption.
@@ -146,7 +175,7 @@ async def get_session_history(request: Request, session_id: str):
 
 # Architecture Note: Streams raw token chunks over SSE without blocking server thread. Rate limiter stripped to prevent Redis TCP timeouts.
 @app.post("/api/chat")
-async def chat_stream(http_request: Request, request: ChatRequest):
+async def chat_stream(http_request: Request, request: ChatRequest, _user: dict = Depends(verify_token)):
     pool = http_request.app.state.pool
 
     async def event_stream():
@@ -210,7 +239,7 @@ async def chat_stream(http_request: Request, request: ChatRequest):
     )
 
 @app.post("/api/reset")
-async def reset_session(http_request: Request, request: ResetRequest):
+async def reset_session(http_request: Request, request: ResetRequest, _user: dict = Depends(verify_token)):
     """Architectural Note: Purges active session state directly from PostgreSQL tables via dynamic UUID."""
     pool = http_request.app.state.pool
     try:
@@ -221,7 +250,7 @@ async def reset_session(http_request: Request, request: ResetRequest):
 
 # Architectural Note: Rate limiter removed to prevent Redis connection timeout block.
 @app.post("/api/tts")
-async def generate_tts(request: TTSRequest):
+async def generate_tts(request: TTSRequest, _user: dict = Depends(verify_token)):
     if not request.text:
         raise HTTPException(status_code=400, detail="Text payload required")
     try:

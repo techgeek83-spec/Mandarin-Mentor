@@ -1,5 +1,9 @@
 # Mandarin Mentor: API Contracts & Schemas
 
+> [!IMPORTANT]
+> **Global Gateway Security (ADR-034)**
+> All FastAPI endpoints (`/api/*`) require a valid Supabase Access Token passed via the `Authorization: Bearer <token>` header. Requests lacking this header or carrying expired/invalid signatures will immediately return `401 Unauthorized`.
+
 **1. Transcription Endpoint (`POST /api/transcribe`)**
 * **Request:** `multipart/form-data` containing `file: UploadFile` (16kHz mono audio/webm or audio/wav).
 * **Response:**
