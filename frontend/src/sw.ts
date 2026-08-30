@@ -17,7 +17,14 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  // Architectural Note: Explicit network-only bypass guarantees that Server-Sent Events (SSE) and JWT-authenticated API requests are never intercepted or cached by the Service Worker layer.
+  runtimeCaching: [
+    {
+      matcher: ({ url }) => url.pathname.startsWith("/api/"),
+      handler: "NetworkOnly",
+    },
+    ...defaultCache,
+  ],
 });
 
 serwist.addEventListeners();
