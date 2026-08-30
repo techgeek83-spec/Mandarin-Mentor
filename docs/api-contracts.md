@@ -3,6 +3,9 @@
 > [!IMPORTANT]
 > **Global Gateway Security (ADR-034)**
 > All FastAPI endpoints (`/api/*`) require a valid Supabase Access Token passed via the `Authorization: Bearer <token>` header. Requests lacking this header or carrying expired/invalid signatures will immediately return `401 Unauthorized`.
+> 
+> **Edge Ingress & CORS Routing (ADR-036)** 
+> Production edge hosting is live at `https://mandarin-mentor-api.fly.dev`. Dynamic CORS preflight (`OPTIONS /api/*`) enforces origin validation, credentials support (`Access-Control-Allow-Credentials: true`), and allows standard authorization headers.
 
 **1. Transcription Endpoint (`POST /api/transcribe`)**
 * **Request:** `multipart/form-data` containing `file: UploadFile` (16kHz mono audio/webm or audio/wav).

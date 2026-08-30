@@ -36,6 +36,6 @@
 
 **Infrastructure & Deployment (Alpha)**
 * **Frontend (Vercel):** Edge CDN deployment for Next.js App Router and `@serwist/next` Service Worker caching.
-* **Backend (Fly.io):** Persistent Dockerized micro-VMs deployed to `nrt` (Tokyo) or `sin` (Singapore) to ensure sub-50ms network latency.
-* **Database (Supabase):** IPv6 Direct Connection routing (port `5432`) bypassing transaction poolers to ensure native `asyncpg` prepared statement compatibility (ADR-033). 
+* **Backend (Fly.io):** Production Dockerized micro-VM running FastAPI/Uvicorn deployed to `nrt` (Tokyo), routing over edge ingress with stateless Supabase JWT authentication (ADR-034, ADR-036). 
+* **Database (Supabase):** Connection pooling via Supabase IPv4 Pooler utilizing `asyncpg` with strict SSL and disabled statement cache (`statement_cache_size=0`) to eliminate transaction routing errors. Direct IPv6 connection routing targeted once external DNS/network resolution path is established.
 * **Gateway Security:** Rate Limiting is currently DISABLED (ADR-017). Protected by stateless Supabase JWT validation (`PyJWT`) on all FastAPI ingress routes to prevent unauthorized API exhaustion (ADR-034).

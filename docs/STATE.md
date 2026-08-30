@@ -30,6 +30,7 @@
 - [x] **State Sync:** `STATE.md`, `system_architecture.md`, and `api_contracts.md` synchronized through ADR-034.
 - [x] **Global Hydration Invariant (ADR-031):** The frontend hydrator parses all conversational and vocabulary CJK tokens in-place without requiring AST hierarchy differentiation between paragraphs and bold elements.
 - [x] **Stateless JWT Validation (ADR-034):** FastAPI ingress routes secured with `HTTPBearer` token verification; frontend hydration and fetch pipelines pass valid Supabase anonymous JWTs.
+- [x] **Fly.io Backend Edge Deployment (ADR-036):** Containerized FastAPI backend deployed to `nrt`, verified stateless 401 JWT rejections, CORS preflight headers, and clean `asyncpg` pool initialization against Supabase IPv4 pooler.
 
 **Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
 

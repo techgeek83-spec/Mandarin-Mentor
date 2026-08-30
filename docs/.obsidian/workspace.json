@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "decisions/ADR-036-backend-fly-io-production-edge-stabilization.md",
+                "file": "STATE.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ADR-036-backend-fly-io-production-edge-stabilization"
+              "title": "STATE"
             }
           }
         ]
@@ -188,15 +188,18 @@
       "bases:Create new base": false
     }
   },
-  "active": "8a9300bbe8c4db27",
+  "active": "8d76d3449a242a7b",
   "lastOpenFiles": [
+    "architecture-state.md",
+    "api-contracts.md",
+    "decisions/ADR-036-backend-fly-io-production-edge-stabilization.md",
+    "STATE.md",
     "Untitled 1.md",
     "decisions/ADR-023-Blockquote-Sentence-TTS-Mapping.md",
     "decisions/ADR-022-dynamic-postgreSQL-Session-Reset.md",
     "decisions/ADR-021-ast-pinyin-memoization.md",
     "decisions/ADR-020-enforce-pure-markdown-in-LLM-output.md",
     "decisions/ADR-019-client-side-regex-interception-for-cjk-audio-hydration.md",
-    "architecture-state.md",
     "Development notes.md",
     "decisions/ADR-016-client-side-deterministic-tts-hydration.md",
     "decisions/ADR-014-reinstating-llm-driven-ast-tagging.md",
@@ -207,9 +210,6 @@
     "decisions/ADR-008-migration-to-postgressql.md",
     "Cloud-deployment-workflow.md",
     "decisions/ADR-035-fly.io-edge-deployment-and-containerization-strategy.md",
-    "decisions/ADR-036-backend-fly-io-production-edge-stabilization.md",
-    "STATE.md",
-    "api-contracts.md",
     "decisions/ADR-034-stateless-supabase-jwt-gateway-security.md",
     "decisions/ADR-034-direct-jwt-gateway.md",
     "decisions/ADR-033-nextjs-proxy-ipv6-routing.md",
