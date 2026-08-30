@@ -451,10 +451,10 @@ const sendPayload = async (userPrompt: string) => {
 
   try {
     // Architecture Note: Injects persistent sessionId from localStorage alongside prompt and level to ensure transactional database persistence in PostgreSQL.
-    // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into the client bundle
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-      const sessionId = typeof window !== 'undefined' ? localStorage.getItem('sessionId') || '' : '';
-      const token = await getValidToken();
+    /* Architectural Note: Normalize ingress resolution across NEXT_PUBLIC_API_URL and NEXT_PUBLIC_API_BASE_URL to prevent silent localhost loopback fallbacks on mobile runtimes. */
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    const sessionId = typeof window !== 'undefined' ? localStorage.getItem('sessionId') || '' : '';
+    const token = await getValidToken()
       // Architecture Note: Injects Supabase JWT Bearer token for streaming SSE chat completions.
       const res = await fetch(`${apiBase}/api/chat`, {
         method: 'POST',

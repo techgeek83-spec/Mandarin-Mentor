@@ -35,8 +35,6 @@
 
 **Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
 
-**Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
-
 ### Active Backlog
 1. **Fly.io & Vercel Cloud Deployment:** Complete. Transitioned to active operations and maintenance.
 2. **Database Ingress Standardization (ADR-038):** Formally deprecated ADR-033. Direct IPv6 routing abandoned; Supabase IPv4 Transaction Pooler (port 6543) locked in with `statement_cache_size=0`.

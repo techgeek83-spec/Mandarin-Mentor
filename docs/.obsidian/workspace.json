@@ -83,12 +83,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "decisions/ADR-041 PWA Static Raster Suite Generation and Ingress Lockdown.md",
+                "file": "STATE.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ADR-041 PWA Static Raster Suite Generation and Ingress Lockdown"
+              "title": "STATE"
             }
           }
         ],
@@ -259,10 +259,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "8a9300bbe8c4db27",
+  "active": "d858c935606d63cd",
   "lastOpenFiles": [
-    "decisions/ADR-040 PWA Icon Extraction Tight Bounding Box.md",
     "decisions/ADR-041 PWA Static Raster Suite Generation and Ingress Lockdown.md",
+    "decisions/ADR-040 PWA Icon Extraction Tight Bounding Box.md",
     "decisions/ADR-039 PWA Manifest PNG Hardening and Service Worker API Exclusion.md",
     "STATE.md",
     "architecture-state.md",
