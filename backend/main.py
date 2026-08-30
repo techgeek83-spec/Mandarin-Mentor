@@ -93,6 +93,8 @@ if frontend_origin not in allowed_origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+   # Architectural Note: Dynamic regex matches all Vercel production and ephemeral preview URLs over HTTPS to prevent manual origin configuration on branch deploys.
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
