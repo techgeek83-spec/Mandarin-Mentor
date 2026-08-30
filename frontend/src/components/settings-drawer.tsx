@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { getValidToken } from '@/lib/supabase';
 import { X, Volume2, Sparkles, Sun, Moon, Monitor, PlayCircle, Gauge, Trash2, Type, RotateCcw } from 'lucide-react';
 // Architecture Note: Removed deprecated PhoneticSystem type import following refactor to boolean showPinyin flag
 import { AppSettings, FontSize } from '@/hooks/use-settings';
@@ -245,9 +246,14 @@ export function SettingsDrawer({
                     // Purge active session state across PostgreSQL via backend API route
                     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
                     const sid = localStorage.getItem('sessionId') || '';
+                    const token = await getValidToken();
+                    // Architecture Note: Injects Supabase JWT Bearer token to authorize dynamic session purge on PostgreSQL (ADR-022, ADR-034).
                     const res = await fetch(`${apiBase}/api/reset`, {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                      },
                       body: JSON.stringify({ session_id: sid })
                     });
                     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);

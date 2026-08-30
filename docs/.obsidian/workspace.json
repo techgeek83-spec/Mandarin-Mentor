@@ -598,9 +598,9 @@
   "active": "e487107205c05fce",
   "lastOpenFiles": [
     "api-contracts.md",
+    "STATE.md",
     "ADR-034-stateless-supabase-jwt-gateway-security.md",
     "architecture-state.md",
-    "STATE.md",
     "decisions/ADR-034-direct-jwt-gateway.md",
     "decisions/ADR-033-nextjs-proxy-ipv6-routing.md",
     "Development notes.md",

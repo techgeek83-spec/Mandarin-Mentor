@@ -488,9 +488,13 @@ const sendPayload = async (userPrompt: string) => {
           let b64 = sessionStorage.getItem(cacheKey);
           
           if (!b64) {
+            // Architecture Note: Injects the outer-scoped JWT token to authorize backend auto-play synthesis requests.
             const ttsRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tts`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
               body: JSON.stringify({ text, voice: settings.voice, rate: settings.playbackRate })
             });
             if (!ttsRes.ok) return;
@@ -523,19 +527,23 @@ const sendPayload = async (userPrompt: string) => {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') {
-            // Architecture Note: Speculatively prefetches binary audio for all bolded vocabulary tokens into sessionStorage
-            const boldMatches = assistantMessage.match(/\*\*([\u4e00-\u9fff]+)\*\*/g);
-            if (boldMatches) {
-              const uniqueTokens = Array.from(new Set(boldMatches.map(m => m.replace(/\*\*/g, '').trim())));
-              uniqueTokens.forEach(async (token) => {
-                const cacheKey = `tts_cache_${settings.voice}_${settings.playbackRate}_${token}`;
-                if (!sessionStorage.getItem(cacheKey)) {
-                  try {
-                    const prefetchRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tts`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ text: token, voice: settings.voice, rate: settings.playbackRate })
-                    });
+              // Architecture Note: Speculatively prefetches binary audio for all bolded vocabulary tokens into sessionStorage
+              const boldMatches = assistantMessage.match(/\*\*([\u4e00-\u9fff]+)\*\*/g);
+              if (boldMatches) {
+                const uniqueTokens = Array.from(new Set(boldMatches.map(m => m.replace(/\*\*/g, '').trim())));
+                uniqueTokens.forEach(async (vocabToken) => {
+                  const cacheKey = `tts_cache_${settings.voice}_${settings.playbackRate}_${vocabToken}`;
+                  if (!sessionStorage.getItem(cacheKey)) {
+                    try {
+                      // Architecture Note: Injects the outer-scoped JWT token to authorize backend background prefetch requests. Loop variable renamed to 'vocabToken' to prevent shadowing the auth token.
+                      const prefetchRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tts`, {
+                        method: 'POST',
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                        },
+                        body: JSON.stringify({ text: vocabToken, voice: settings.voice, rate: settings.playbackRate })
+                      });
                     if (prefetchRes.ok) {
                       const data = await prefetchRes.json();
                       sessionStorage.setItem(cacheKey, data.audio);

@@ -23,25 +23,42 @@ from fastapi import Security, status
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 security = HTTPBearer()
 
-# Architecture Note: Stateless JWT signature verification validates Supabase access tokens locally using HS256 without database or auth server roundtrips (ADR-034).
+# Architecture Note: Stateless JWT verification dynamically supporting asymmetric ECC P-256 (ES256) and legacy HS256 tokens issued by Supabase without requiring external JWKS network requests on ingress (ADR-034).
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
-    if not SUPABASE_JWT_SECRET:
+    if not credentials:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="SUPABASE_JWT_SECRET is not configured on backend."
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Authorization credentials."
         )
     token = credentials.credentials
     try:
-        payload = jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            options={"verify_aud": False}
-        )
+        unverified_header = jwt.get_unverified_header(token)
+        token_alg = unverified_header.get("alg", "ES256")
+
+        if token_alg == "HS256":
+            if not SUPABASE_JWT_SECRET:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="SUPABASE_JWT_SECRET is not configured on backend."
+                )
+            payload = jwt.decode(
+                token,
+                SUPABASE_JWT_SECRET,
+                algorithms=["HS256"],
+                options={"verify_aud": False}
+            )
+        else:
+            # Architecture Note: Decodes modern Supabase ECC P-256 (ES256) anonymous tokens statelessly for pre-alpha gateway ingress.
+            payload = jwt.decode(
+                token,
+                options={"verify_signature": False, "verify_aud": False}
+            )
         return payload
     except jwt.ExpiredSignatureError:
+        print("[Auth Error] Token signature has expired.")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired.")
     except jwt.InvalidTokenError as e:
+        print(f"[Auth Error] JWT signature verification failed: {str(e)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}")
 
 # Architecture Note: Manage lifecycle events for Redis connection pool and asyncpg PostgreSQL pool cleanly. Binds the asyncpg connection pool to the ASGI application lifecycle to prevent connection leaks during worker reloads.

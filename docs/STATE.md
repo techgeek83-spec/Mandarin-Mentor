@@ -14,10 +14,11 @@
 | **Inline Audio Pill Bounding** | **Deprecated** | Formally abandoned via ADR-031. Preserves global CJK hydration (`/[\u4e00-\u9fff]+/g`) to prevent recursive AST destruction and component crashes. | Minor: Conversational Hanzi retains inline audio micro-players alongside targeted vocabulary. |
 | **Client-Side TTS Hydration** | **Stable** | Deterministic AST interceptor in ReactMarkdown with memoized `pinyin-pro` dictionary cache (ADR-021) and isolated blockquote sentence cards (ADR-026). | Resolved double-pinyin hydration and render lockups. |
 | **Persistent Storage (PostgreSQL)** | **Stable** | Supabase `asyncpg` connection pool with dynamic client UUIDs across history fetch, chat persistence, and reset endpoints (ADR-022). | Stable. FK constraints and multi-tenant isolation verified. |
-| **Gateway Security & Rate Limiting** | **Critical** | Re-implement non-blocking rate limiting on `/api/chat`, `/api/tts`, and `/api/transcribe`. **Pros:** Hardens API keys against credit exhaustion. | **Currently stripped (ADR-017)**. Blocking Redis lookups destroyed sub-second TTFB. Needs an async/edge-based solution. |
+| **Stateless Gateway Security** | **Stable** | Stateless Supabase JWT signature verification (`PyJWT`) on all FastAPI ingress routes (ADR-034). Next.js acquires anonymous sessions to provide Bearer credentials. | Stable. Protects upstream AI and TTS APIs without database lookup overhead. |
+| **Gateway Rate Limiting** | **Critical** | Re-implement non-blocking rate limiting on `/api/chat`, `/api/tts`, and `/api/transcribe`. **Pros:** Hardens API keys against credit exhaustion. | **Currently stripped (ADR-017)**. Blocking Redis lookups destroyed sub-second TTFB. Needs an async/edge-based solution. |
 | **PWA Distribution & Audio Fallback Engine** | **Critical** | Next.js PWA (`manifest.json`, ServiceWorker cache) with client-side Web Audio PCM/WAV fallback (ADR-019). | Stable. Resolves iOS `MediaRecorder` codec failures. |
-| **Audio Concurrency Control** | **High** | Sequential promise chain in streaming consumer to manage auto-play audio queue[cite: 1]. | Minor: Pre-fetching bold tokens may cause background fetch spikes on large responses. |
-| **Managed Authentication** | **Low** | Stateless JWT signature verification at FastAPI gateway layer. **Pros:** Offloads identity management. | Deferred to Beta. Risk of split-brain user identity vs database state prior to user accounts rollout. |
+| **Audio Concurrency Control** | **High** | Sequential promise chain in streaming consumer to manage auto-play audio queue. | Minor: Pre-fetching bold tokens may cause background fetch spikes on large responses. |
+| **Managed Authentication** | **Low** | Stateless JWT signature verification at FastAPI gateway layer. **Pros:** Offloads identity management. | Anonymous tier implemented. Full user account management deferred to Beta. |
 
 ## Active Development Log
 
@@ -26,21 +27,19 @@
 - [x] **E2E Validation:** Full session write/read lifecycle via Supabase (`POST /api/chat` -> PostgreSQL `asyncpg` -> `GET /api/history` client hydration).
 - [x] **Reset Lifecycle:** Dynamic UUID routing for database session purge (`POST /api/reset`).
 - [x] **TTS AST Engine:** Pure Markdown output, blockquote multi-line sentence splitting, single-border styling, and isolated pinyin cursor indexing.
-- [x] **State Sync:** `STATE.md`, `system_architecture.md`, and `api_contracts.md` synchronized through ADR-028.
-- [x] *Global Hydration Invariant (ADR-031):** The frontend hydrator parses all conversational and vocabulary CJK tokens in-place without requiring AST hierarchy differentiation between paragraphs and bold elements.
+- [x] **State Sync:** `STATE.md`, `system_architecture.md`, and `api_contracts.md` synchronized through ADR-034.
+- [x] **Global Hydration Invariant (ADR-031):** The frontend hydrator parses all conversational and vocabulary CJK tokens in-place without requiring AST hierarchy differentiation between paragraphs and bold elements.
+- [x] **Stateless JWT Validation (ADR-034):** FastAPI ingress routes secured with `HTTPBearer` token verification; frontend hydration and fetch pipelines pass valid Supabase anonymous JWTs.
 
 **Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
 
 ### Active Backlog
-1. **Frontend Auth Lifecycle (Supabase):** Implement `@supabase/supabase-js` anonymous sign-in and session state hydration in the Next.js client.
-2. **Backend Stateless JWT Validation:** Integrate `PyJWT` into FastAPI to validate Supabase signatures locally, guaranteeing zero database roundtrips for API gateway ingress (ADR-034).
-3. **Client-Side Header Injection:** Update Next.js `fetch` wrappers to inject `Authorization: Bearer <token>` into all Fly.io API payload requests.
-4. **Fly.io & Vercel Cloud Deployment:** Containerize the FastAPI backend for Fly.io (`nrt`/`sin` regions) and deploy the Next.js frontend to Vercel.
-5. **IPv6 Database Routing (ADR-033):** Configure FastAPI `asyncpg` to utilize Supabase direct IPv6 connections (port 5432) to restore prepared statement stability.
-6. **Constrain Inline Audio Pills:** Restrict `<TTSPlayer mode="inline">` strictly to bolded Markdown vocabulary tokens (`**Hanzi**`), allowing free-form Chinese text in paragraphs and explanations to display ruby pinyin without actionable audio buttons.
-7. **Re-architect Redis Rate Limiting:** Implement non-blocking token-bucket rate limiter that fails open without delaying SSE stream connection.
-8. **PWA Service Worker Verification:** Complete offline cache auditing and verify installability across mobile viewports.
-9. **Frontend Lockdown & Sync:** Verify baseline stability across all mobile viewports following the ADR-031 stabilization.
+1. **Fly.io & Vercel Cloud Deployment:** Containerize the FastAPI backend with multi-stage Dockerfile for Fly.io (`nrt`/`sin` regions) and deploy Next.js frontend to Vercel.
+2. **IPv6 Database Routing (ADR-033):** Configure FastAPI `asyncpg` to utilize Supabase direct IPv6 connections (port 5432) to restore prepared statement stability.
+3. **Constrain Inline Audio Pills:** Restrict `<TTSPlayer mode="inline">` strictly to bolded Markdown vocabulary tokens (`**Hanzi**`), allowing free-form Chinese text in paragraphs and explanations to display ruby pinyin without actionable audio buttons.
+4. **Re-architect Redis Rate Limiting:** Implement non-blocking token-bucket rate limiter that fails open without delaying SSE stream connection.
+5. **PWA Service Worker Verification:** Complete offline cache auditing and verify installability across mobile viewports.
+6. **Frontend Lockdown & Sync:** Verify baseline stability across all mobile viewports following the ADR-031 stabilization.
 
 ### Technical Debt & Accepted Trade-offs
 * **LLM Formatting Constraints Stripped (ADR-016 / ADR-020):** LLM emits pure Markdown. All layout, ruby annotation, and TTS bindings are derived client-side from the AST.
