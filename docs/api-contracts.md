@@ -45,7 +45,7 @@ JSON
     - **Global Pinyin Memoization (ADR-021):** Client utilizes an out-of-lifecycle `Map<string, string[]>` cache to prevent $O(N^2)$ CPU lockups during rapid SSE delta streaming.
         
     - **AST Node Interception (ADR-026 / ADR-027):** Blockquotes are parsed line-by-line to isolate multi-turn dialogues into independent `<TTSPlayer mode="block">` components using isolated Hanzi cursor indexing.
-        
+    - **Global Hydration Invariant (ADR-031):** The frontend hydrator parses all conversational and vocabulary CJK tokens in-place without requiring AST hierarchy differentiation between paragraphs and bold elements.
 
 **3. Synthesize Audio Endpoint (`POST /api/tts`)**
 

@@ -27,6 +27,7 @@
   * **Memoization Cache (ADR-021):** Global `pinyinDictCache` (`Map<string, string[]>`) stores evaluated pinyin arrays outside the component lifecycle to prevent $O(N^2)$ render lockups during active token streaming.
   * **Blockquote Sentence Player (ADR-023, ADR-024, ADR-026):** ReactMarkdown `blockquote` AST renderer splits multi-line dialogue strings by `\n`. Each non-empty line with Hanzi mounts an isolated `<TTSPlayer mode="block">` containing custom ruby character alignment. Non-CJK lines (English translations) render as plain text without audio triggers.
   * **Isolated Hanzi Cursor Indexing (ADR-027):** Character-by-character mapping consumes a pure Hanzi pinyin array via a local cursor index, preventing ruby offset drift on punctuation or whitespace.
+  * **Global CJK Text Hydration (ADR-031):** Client-side inline hydration intercepts all Hanzi text nodes via regex (`/[\u4e00-\u9fff\u3000-\u303F\uFF00-\uFFEF]+/g`) to render `<ruby>` pinyin and mount inline `<TTSPlayer mode="inline">` micro-players. Direct AST overrides on `strong` nodes are permanently deprecated to eliminate AST double-hydration collisions and DOM recursion shredding.
 * **Audio State Machine & Concurrency Control:**
   * **Singleton Playback Queue:** Sequential promise chain prevents overlapping audio playback during auto-play streaming.
   * **Speculative Pre-fetching:** Client-side scanner detects bolded Hanzi tokens (`**...**`) in completed stream buffers and pre-fetches binary audio into `sessionStorage`.
@@ -34,6 +35,7 @@
 ---
 
 **Infrastructure & Deployment (Alpha)**
-* **PWA Edge & Service Worker Caching:** Delivery via `@serwist/next` Service Worker and SVG `manifest.json`. `CacheFirst` for CJK fonts/static UI; `NetworkFirst` for SSE streams.
-* **FastAPI Gateway & Security:** Regional Asian node (Tokyo/Singapore). Rate Limiting is currently DISABLED (ADR-017) to prevent blocking the initial SSE yield.
-* **Database Pipeline:** Connection pooling via `asyncpg` attached to `app.state.pool`. Dynamically scoped to request UUIDs to enforce multi-tenant isolation.
+* **Frontend (Vercel):** Edge CDN deployment for Next.js App Router and `@serwist/next` Service Worker caching.
+* **Backend (Fly.io):** Persistent Dockerized micro-VMs deployed to `nrt` (Tokyo) or `sin` (Singapore) to ensure sub-50ms network latency.
+* **Database (Supabase):** PostgreSQL connection pooling via `asyncpg` strictly routed through the Supavisor transaction pooler (port `6543`) to prevent connection exhaustion.
+* **Gateway Security:** Rate Limiting is currently DISABLED (ADR-017). Protected temporarily by a static Pre-Shared Key (PSK) authentication header (ADR-032) to prevent unauthorized API execution.
