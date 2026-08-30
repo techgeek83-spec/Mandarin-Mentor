@@ -11,10 +11,6 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from pydantic import BaseModel
-from rate_limiter import limiter, rate_limit
-from database import init_db_pool, close_db_pool
-
 from database import init_db_pool, close_db_pool
 import jwt
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -61,14 +57,12 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
         print(f"[Auth Error] JWT signature verification failed: {str(e)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}")
 
-# Architecture Note: Manage lifecycle events for Redis connection pool and asyncpg PostgreSQL pool cleanly. Binds the asyncpg connection pool to the ASGI application lifecycle to prevent connection leaks during worker reloads.
+# Architecture Note: Manage lifecycle events for the asyncpg PostgreSQL pool cleanly. Redis initialization is removed per ADR-017 to eliminate boot crash loops in environments without an active Redis instance.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await limiter.init_redis()
     app.state.pool = await init_db_pool()
     yield
     await close_db_pool(app.state.pool)
-    await limiter.close()
 
 from google import genai
 from google.genai import types
