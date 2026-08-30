@@ -271,7 +271,7 @@ export function SettingsDrawer({
         </div>
 
         <div className="text-center text-[11px] text-ink-muted border-t border-border-subtle pt-4">
-          MandarinMentor Taiwan v1.0.0
+          MandarinMentor Taiwan v0.1.6
         </div>
       </div>
     </div>
