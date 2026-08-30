@@ -218,7 +218,8 @@ export default function Chat() {
     const fetchHistory = async () => {
       try {
         const token = await getValidToken();
-        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+        /* Architectural Note: Normalize API base fallback to NEXT_PUBLIC_API_URL to eliminate Local Network Access violations in production edge environments. */
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
         // Architecture Note: Injects Supabase JWT Bearer token for session hydration authorization.
         const res = await fetch(`${apiBase}/api/history?session_id=${sid}`, {
           headers: {
@@ -488,8 +489,9 @@ const sendPayload = async (userPrompt: string) => {
           let b64 = sessionStorage.getItem(cacheKey);
           
           if (!b64) {
-            // Architecture Note: Injects the outer-scoped JWT token to authorize backend auto-play synthesis requests.
-            const ttsRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tts`, {
+            /* Architectural Note: Normalize API base to NEXT_PUBLIC_API_URL with localhost fallback to prevent undefined path construction in production bundles. */
+            const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+            const ttsRes = await fetch(`${apiBase}/api/tts`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
@@ -535,8 +537,9 @@ const sendPayload = async (userPrompt: string) => {
                   const cacheKey = `tts_cache_${settings.voice}_${settings.playbackRate}_${vocabToken}`;
                   if (!sessionStorage.getItem(cacheKey)) {
                     try {
-                      // Architecture Note: Injects the outer-scoped JWT token to authorize backend background prefetch requests. Loop variable renamed to 'vocabToken' to prevent shadowing the auth token.
-                      const prefetchRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tts`, {
+                      /* Architectural Note: Use unified apiBase to eliminate undefined route requests during background vocabulary prefetching. */
+                      const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+                      const prefetchRes = await fetch(`${apiBase}/api/tts`, {
                         method: 'POST',
                         headers: { 
                           'Content-Type': 'application/json',
@@ -862,7 +865,11 @@ const sendPayload = async (userPrompt: string) => {
             </button>
           </div>
           
+          {/* Architectural Note: Screen-reader only label and explicit id/name bindings added to resolve DOM accessibility warnings without altering layout or input dynamics. */}
+          <label htmlFor="chat-input" className="sr-only">Type your message</label>
           <input 
+            id="chat-input"
+            name="chat-input"
             type="text" 
             value={input} 
             onChange={(e) => setInput(e.target.value)}
