@@ -35,14 +35,13 @@
 
 **Current Phase:** Pre-Alpha Hardening (Targeting Taichung Tester Network)
 
-### Active Backlog
-1. **Fly.io & Vercel Cloud Deployment:** Complete. Transitioned to active operations and maintenance.
+## Active Backlog
+1. **Fly.io & Vercel Cloud Deployment:** Complete. Verified decoupled production gateway and CORS routing across Vercel and Fly.io (ADR-036, ADR-037, ADR-042).
 2. **Database Ingress Standardization (ADR-038):** Formally deprecated ADR-033. Direct IPv6 routing abandoned; Supabase IPv4 Transaction Pooler (port 6543) locked in with `statement_cache_size=0`.
-3. **Constrain Inline Audio Pills:** Restrict `<TTSPlayer mode="inline">` strictly to bolded Markdown vocabulary tokens (`**Hanzi**`), allowing free-form Chinese text in paragraphs and explanations to display ruby pinyin without actionable audio buttons.
-4. **Re-architect Redis Rate Limiting:** Implement non-blocking token-bucket rate limiter that fails open without delaying SSE stream connection.
-5. **PWA Service Worker Verification:** Complete offline cache auditing and verify installability across mobile viewports.
+3. **PWA Manifest & Mobile Distribution:** Complete. Verified Web App Manifest, raster suite icon mappings, iOS WebKit meta capabilities, and Serwist Service Worker installability across Android Chromium and iPad Safari (ADR-039 through ADR-041).
+4. **Constrain Inline Audio Pills:** Restrict `<TTSPlayer mode="inline">` strictly to bolded Markdown vocabulary tokens (`**Hanzi**`), allowing free-form Chinese text in paragraphs and explanations to display ruby pinyin without actionable audio buttons.
+5. **Re-architect Redis Rate Limiting:** Implement non-blocking token-bucket rate limiter that fails open without delaying SSE stream connection.
 6. **Frontend Lockdown & Sync:** Verify baseline stability across all mobile viewports following the ADR-031 stabilization.
-
 ### Technical Debt & Accepted Trade-offs
 * **Database Statement Caching Disabled (ADR-038):** `asyncpg` runs with `statement_cache_size=0` to remain compatible with Supabase's transaction pooler (port 6543), trading query preparation cache for zero-friction pooling stability.
 * **LLM Formatting Constraints Stripped (ADR-016 / ADR-020):** LLM emits pure Markdown. All layout, ruby annotation, and TTS bindings are derived client-side from the AST.

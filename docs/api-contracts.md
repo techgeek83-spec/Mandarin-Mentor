@@ -4,8 +4,8 @@
 > **Global Gateway Security (ADR-034)**
 > All FastAPI endpoints (`/api/*`) require a valid Supabase Access Token passed via the `Authorization: Bearer <token>` header. Requests lacking this header or carrying expired/invalid signatures will immediately return `401 Unauthorized`.
 > 
-> **Edge Ingress & CORS Routing (ADR-036)** > Production edge hosting is live at `https://mandarin-mentor-api.fly.dev`. Dynamic CORS preflight (`OPTIONS /api/*`) enforces origin validation, credentials support (`Access-Control-Allow-Credentials: true`), and allows standard authorization headers.
->  // SUCCEEDING
+> **Edge Ingress & CORS Routing (ADR-036 / ADR-042)**
+> Production edge hosting is live at `https://mandarin-mentor-api.fly.dev`. Dynamic CORS preflight (`OPTIONS /api/*`) enforces origin validation, credentials support (`Access-Control-Allow-Credentials: true`), and allows standard authorization headers. Client fetch invocations across chat, audio synthesis, and transcription explicitly bind to this production gateway.
 >   
 >   **Vercel Dynamic Origin Matching (ADR-037)**
 >   FastAPI `CORSMiddleware` utilizes `allow_origin_regex=r"https://.*\.vercel\.app"` to permit preflight requests across all Vercel production edge domains and preview environments while enforcing HTTPS ingress.

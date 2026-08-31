@@ -90,9 +90,23 @@
               "icon": "lucide-file",
               "title": "STATE"
             }
+          },
+          {
+            "id": "787420b4feeea5be",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "api-contracts.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "api-contracts"
+            }
           }
         ],
-        "currentTab": 5
+        "currentTab": 6
       }
     ],
     "direction": "vertical"
@@ -259,13 +273,14 @@
       "bases:Create new base": false
     }
   },
-  "active": "d858c935606d63cd",
+  "active": "787420b4feeea5be",
   "lastOpenFiles": [
+    "architecture-state.md",
+    "STATE.md",
+    "decisions/ADR-042 Hardcoded Production Gateway Ingress Fallback.md",
     "decisions/ADR-041 PWA Static Raster Suite Generation and Ingress Lockdown.md",
     "decisions/ADR-040 PWA Icon Extraction Tight Bounding Box.md",
     "decisions/ADR-039 PWA Manifest PNG Hardening and Service Worker API Exclusion.md",
-    "STATE.md",
-    "architecture-state.md",
     "decisions/ADR-038-deprecate-ipv6-routing.md",
     "api-contracts.md",
     "operational_runbook.md",
@@ -286,7 +301,6 @@
     "decisions/ADR-008-migration-to-postgressql.md",
     "Cloud-deployment-workflow.md",
     "decisions/ADR-035-fly.io-edge-deployment-and-containerization-strategy.md",
-    "decisions/ADR-034-stateless-supabase-jwt-gateway-security.md",
     "decisions",
     "Mandarin mentor/decisions",
     "Mandarin mentor"

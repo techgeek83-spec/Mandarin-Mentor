@@ -35,7 +35,7 @@
 ---
 
 **Infrastructure & Deployment (Alpha)**
-* **Frontend (Vercel):** Production Edge CDN hosting running Next.js App Router with Webpack-compiled `@serwist/next` Service Worker runtime (`src/sw.ts` -> `public/sw.js`). Unified client API base resolution via `NEXT_PUBLIC_API_URL` eliminates private network fallback collisions.
+* **Frontend (Vercel):** Production Edge CDN hosting running Next.js App Router with Webpack-compiled `@serwist/next` Service Worker runtime (`src/sw.ts` -> `public/sw.js`). Client API invocation uses hardcoded production gateway routing to prevent mobile runtime loopback failures (ADR-042).
 * **Backend (Fly.io):** Production Dockerized micro-VM running FastAPI/Uvicorn deployed to `nrt` (Tokyo), routing over edge ingress with stateless Supabase JWT authentication and dynamic CORS origin regex for Vercel preview environments (ADR-034, ADR-036, ADR-037).
 * **Database (Supabase):** Permanent connection pooling via Supabase IPv4 Transaction Pooler (port `6543`) utilizing `asyncpg` with strict SSL and disabled statement cache (`statement_cache_size=0`, ADR-038). Direct IPv6 connection routing is permanently deprecated to avoid Fly.io DNS resolution failure modes.
 * **Gateway Security:** Rate Limiting is currently DISABLED (ADR-017). Protected by stateless Supabase JWT validation (`PyJWT`) on all FastAPI ingress routes to prevent unauthorized API exhaustion (ADR-034).
