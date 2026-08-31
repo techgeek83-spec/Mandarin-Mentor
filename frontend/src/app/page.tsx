@@ -451,8 +451,8 @@ const sendPayload = async (userPrompt: string) => {
 
   try {
     // Architecture Note: Injects persistent sessionId from localStorage alongside prompt and level to ensure transactional database persistence in PostgreSQL.
-    /* Architectural Note: Normalize ingress resolution across NEXT_PUBLIC_API_URL and NEXT_PUBLIC_API_BASE_URL to prevent silent localhost loopback fallbacks on mobile runtimes. */
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    /* Architectural Note: Hardcoded to bypass Next.js client-side environment variable hydration failures on mobile runtimes. */
+    const apiBase = 'https://mandarin-mentor-api.fly.dev';
     const sessionId = typeof window !== 'undefined' ? localStorage.getItem('sessionId') || '' : '';
     const token = await getValidToken()
       // Architecture Note: Injects Supabase JWT Bearer token for streaming SSE chat completions.
