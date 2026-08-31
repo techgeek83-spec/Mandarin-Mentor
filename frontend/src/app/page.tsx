@@ -63,8 +63,8 @@ const TTSPlayer = ({
       // Architecture Note: Normalizes UI numeric speed selections into edge-tts compatible percentage strings to prevent 500 backend fetch failures.
       const normalizedRate = (String(rate) === '1' || String(rate) === '1.0') ? '+0%' : rate;
 
-      // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into the client bundle
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      /* Architectural Note: Hardcoded production Fly.io domain to bypass Next.js client bundle hydration failure across all TTS and micro-player invocations. */
+      const apiBase = 'https://mandarin-mentor-api.fly.dev';
       const token = await getValidToken();
       // Architecture Note: Injects Supabase JWT Bearer token to authorize ingress requests at the FastAPI gateway.
       const res = await fetch(`${apiBase}/api/tts`, {
@@ -218,8 +218,8 @@ export default function Chat() {
     const fetchHistory = async () => {
       try {
         const token = await getValidToken();
-        /* Architectural Note: Normalize API base fallback to NEXT_PUBLIC_API_URL to eliminate Local Network Access violations in production edge environments. */
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+        /* Architectural Note: Hardcoded production Fly.io domain to prevent localhost loopback fallback during session history hydration. */
+        const apiBase = 'https://mandarin-mentor-api.fly.dev';
         // Architecture Note: Injects Supabase JWT Bearer token for session hydration authorization.
         const res = await fetch(`${apiBase}/api/history?session_id=${sid}`, {
           headers: {
@@ -299,8 +299,8 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
       const formData = new FormData();
       formData.append('file', blob, filename);
 
-      // Architectural Note: Fallback to localhost:8000 when NEXT_PUBLIC_API_BASE_URL is not injected into client bundle
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      /* Architectural Note: Hardcoded production Fly.io domain to eliminate loopback failure during multipart audio transcription. */
+      const apiBase = 'https://mandarin-mentor-api.fly.dev';
       const token = await getValidToken();
       // Architecture Note: Injects Supabase JWT Bearer token for audio transcription multipart upload.
       const res = await fetch(`${apiBase}/api/transcribe`, {
@@ -489,8 +489,8 @@ const sendPayload = async (userPrompt: string) => {
           let b64 = sessionStorage.getItem(cacheKey);
           
           if (!b64) {
-            /* Architectural Note: Normalize API base to NEXT_PUBLIC_API_URL with localhost fallback to prevent undefined path construction in production bundles. */
-            const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+            /* Architectural Note: Hardcoded production Fly.io domain to prevent localhost loopback during SSE delta audio playback queueing. */
+            const apiBase = 'https://mandarin-mentor-api.fly.dev';
             const ttsRes = await fetch(`${apiBase}/api/tts`, {
               method: 'POST',
               headers: { 
@@ -537,8 +537,8 @@ const sendPayload = async (userPrompt: string) => {
                   const cacheKey = `tts_cache_${settings.voice}_${settings.playbackRate}_${vocabToken}`;
                   if (!sessionStorage.getItem(cacheKey)) {
                     try {
-                      /* Architectural Note: Use unified apiBase to eliminate undefined route requests during background vocabulary prefetching. */
-                      const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+                      /* Architectural Note: Hardcoded production Fly.io domain for background vocabulary prefetching. */
+                      const apiBase = 'https://mandarin-mentor-api.fly.dev';
                       const prefetchRes = await fetch(`${apiBase}/api/tts`, {
                         method: 'POST',
                         headers: { 
